@@ -21,11 +21,12 @@ sudo bundle install
 ### Using the template
 
 1. Edit `_config.yml`
-   - Set the `baseurl` to the name of your final repository in Github.
+   - Set the `baseurl` to the name of your final repository in Github. You need to leave the `/` before your repo name.
+   - Set the `feature_image` to something else.
    - Set the `description` attribute to the name of the paper. This makes it appear as the webpage title in your browser.
 2. Edit `index.md`
    - Replace the `feature_image` for a background image of your choice.
-   - Edit the `feature_text` attribute at the start, replacing `title` and `authorN` by the corresponding data in your paper.
+   - Edit the `feature_text` attribute at the start, replacing `title` and `authorN` by the corresponding data in your paper and editing the affiliations and institution names as needed.
    - Edit the Jekyll templates (and add more if needed) to show the link buttons you need to show.
    - Populate the file with the content that will appear in your page, using Markdown. Be sure that at least an abstract and "cite as" sections are present.
 

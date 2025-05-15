@@ -3,7 +3,15 @@ title: ""
 feature_image: "https://picsum.photos/1300/400?image=989"
 feature_text: |
   ## title
-  author1, author2, author3
+  author1<sup>*,1</sup>, author2<sup>2</sup>, author3<sup>1,2</sup>
+  <small>
+    <br>
+    <sup>*</sup>Corresponding author
+    <br>
+    <sup>1</sup>Institution 1
+    <br>
+    <sup>2</sup>Institution 2
+  </small>
   
 ---
 
