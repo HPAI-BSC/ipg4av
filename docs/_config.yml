@@ -23,7 +23,7 @@ plugins:
 url: 'https://mydomain.com'
 baseurl: ''
 title: 'HPAI'
-description: 'Policy Graphs and Intention: answering ‘why’ and ‘how’ from a telic perspective'
+description: ''
 permalink: pretty
 logo: "https://www.hpai.bsc.es/images/hpai_logo.png?h=50"
 
