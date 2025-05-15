@@ -21,6 +21,7 @@ sudo bundle install
 ### Using the template
 
 1. Edit `_config.yml`
+   - Set the `baseurl` to the name of your final repository in Github.
    - Set the `description` attribute to the name of the paper. This makes it appear as the webpage title in your browser.
 2. Edit `index.md`
    - Replace the `feature_image` for a background image of your choice.
@@ -40,4 +41,11 @@ Then access http://127.0.0.1:4000/ to see the frontpage of your page.
 
 ### Uploading to Github
 
-To be documented
+1. Create a new **public** Github repository for your webpage. Name it as you want.
+2. Clone your new repository in your local PC: `git clone git@github.com:HPAI-BSC/<your-repo>.git`.
+3. Copy the contents of the template (except for the `README.md`) into your paper's repo.
+4. Check that the template's webpage (http://127.0.0.1:4000/) is displayed correctly by using `bundle exec jekyll serve`.
+5. Commit and push the template's contents into the repo.
+6. In Github, go to **Settings > Pages > Branch** and select the `main` branch and the `/docs` folder as the sources of your webpage.
+7. Populate your webpage following the steps in the "_Using the template_" section.
+8. Commit and push your content. Your webpage will be at https://hpai-bsc.github.io/your-project. 
