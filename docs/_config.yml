@@ -21,9 +21,9 @@ plugins:
 
 # Site settings
 url: 'https://hpai-bsc.github.io'
-baseurl: '/your-repo-name'
+baseurl: '/ipg4av'
 title: 'HPAI'
-description: ''
+description: 'Explaining Autonomous Vehicles with Intention-aware Policy Graphs'
 permalink: pretty
 logo: "/assets/logo.png"
 
