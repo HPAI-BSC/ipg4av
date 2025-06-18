@@ -1,5 +1,5 @@
-export NUSCENES_DATA_ROOT='/home/sara/Desktop/adriving-pg/data/sets/nuscenes'
-#export CUSTOM_DATA_ROOT=${NUSCENES_DATA}/processed
+export NUSCENES_DATA_ROOT='{your_main_folder}/data/sets/nuscenes'
+
 split='v1.0-trainval' #'v1.0-mini' 
 
 
