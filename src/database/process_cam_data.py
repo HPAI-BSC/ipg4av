@@ -319,5 +319,5 @@ if __name__ == "__main__":
     df.to_csv(output_path, index=False)
     print(f"Camera detection data saved to {output_path}")
 
-#python3 create_cam_data.py --dataroot /home/saramontese/Desktop/MasterThesis/example/dataset/data/sets/nuscenes --dataoutput /home/saramontese/Desktop/MasterThesis/example/dataset/data/sets/nuscenes --version v1.0-trainval --alpha 10
+
 

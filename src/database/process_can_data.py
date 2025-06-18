@@ -80,4 +80,3 @@ if __name__ == "__main__":
     processor = CANDataProcessor(args.dataroot, args.dataoutput, args.version)
     processor.process_CAN_data()
 
-    #/home/saramontese/Desktop/MasterThesis/example/dataset/create_can_data.py --dataroot /home/saramontese/Desktop/MasterThesis/example/dataset/data/sets/nuscenes --dataoutput /home/saramontese/Desktop/MasterThesis/example/dataset/data/sets/nuscenes --version v1.0-trainval
