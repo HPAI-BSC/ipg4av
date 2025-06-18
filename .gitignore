@@ -10,8 +10,3 @@ _site
 vendor
 .venv/*
 .idea/*
-src/compute_nll.py
-src/compute_entropy.py
-src/experiments/decision_tree.ipynb
-src/experiments/scene_analysis.ipynb
-src/experiments/global_analysis.ipynb
