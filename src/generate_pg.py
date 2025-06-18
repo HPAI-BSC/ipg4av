@@ -138,4 +138,4 @@ if __name__ == '__main__':
     if verbose:
         print(f'Successfully generated Policy Graph with {len(pg.nodes)} nodes and {len(pg.edges)} edges.')
 
-    #python3 generate_pg.py --input /home/sara/Desktop/adriving-pg/data/sets --verbose --file full_v1.0-mini.csv --output csv --discretizer 0a --city 'all'
+
