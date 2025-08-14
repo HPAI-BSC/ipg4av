@@ -1,5 +1,6 @@
 __pycache__/
 notebooks/
+data/
 img/
 Dockerfile
 _site
