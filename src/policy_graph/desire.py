@@ -1,4 +1,4 @@
-from typing import Set, Optional, List, Dict
+from typing import Optional, List, Dict
 from pgeon.discretizer import Predicate
 from pgeon.desire import Desire
 from enum import Enum
