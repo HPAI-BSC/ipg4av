@@ -5,13 +5,12 @@ import utils
 from table_loader import BaseTableLoader
 import time
 from joblib import Parallel, delayed
-import json
 
 class SceneDataProcessor(BaseTableLoader):
     """
         Processes agent data from the nuScenes dataset, creating a DataFrame with additional columns for velocity,
         acceleration, and heading change rate, based on sensor data filtering. 
-        Merges data from CAN bus and Camera as well.
+        Merges data from CAN bus.
 
     """
     def __init__(self, dataroot, dataoutput, version, key_frames):
@@ -22,7 +21,6 @@ class SceneDataProcessor(BaseTableLoader):
         self.version = version
         self.key_frames = key_frames
         self.sensor = 'lidar'
-        #self.nuscenes = NuScenes(version, dataroot=Path(dataroot), verbose=True)
 
         start_time = time.time()
         print("======\nLoading NuScenes tables for version {}...".format(self.version))
@@ -35,7 +33,7 @@ class SceneDataProcessor(BaseTableLoader):
         print('sensor table loaded')        
         self.ego_pose = self.__load_table__('ego_pose')     
         print('ego_pose table loaded')
-        #self.__make_reverse_index__(verbose=True)
+        
         print("Done loading in {:.3f} seconds.\n======".format(time.time() - start_time))
 
 
@@ -43,11 +41,8 @@ class SceneDataProcessor(BaseTableLoader):
 
     def process_scene_data(self):
         """Process scene data and merge relevant tables into a final DataFrame."""
-        can_data = pd.read_csv(Path(self.dataoutput) / 'can_data.csv')
-        #cam_data = pd.read_csv(Path(self.dataoutput) / 'cam_detection.csv')
-
-        # Perform a full outer join to keep all CAN bus and camera data
-        #sample = pd.merge(can_data, cam_data, on='sample_token', how='outer')
+        
+        can_data = pd.read_csv(Path(self.dataoutput) / f'can_data_{self.version}.csv')
 
         sample_data = pd.DataFrame(self.sample_data)
         sample_data = sample_data.loc[sample_data['is_key_frame'] == self.key_frames, ['sample_token', 'ego_pose_token', 'calibrated_sensor_token']]
@@ -60,7 +55,6 @@ class SceneDataProcessor(BaseTableLoader):
 
         ego_pose = pd.DataFrame(self.ego_pose).rename(columns={'token': 'ego_pose_token'})
         ego_pose[['x', 'y', 'z']] = pd.DataFrame(ego_pose['translation'].tolist(), index=ego_pose.index)
-        #merged_df = sample.merge(merged_df, on='sample_token', how='outer').merge(ego_pose, on='ego_pose_token', how='left').drop(columns=['ego_pose_token', 'translation'])
         merged_df = can_data.merge(merged_df, on='sample_token').merge(ego_pose, on='ego_pose_token').drop(columns=['ego_pose_token', 'translation'])
         
         merged_df['yaw'] = merged_df['rotation'].apply(utils.quaternion_yaw).drop(columns=['rotation'])
@@ -78,7 +72,7 @@ class SceneDataProcessor(BaseTableLoader):
 
 
 
-    def run_processing(self, test_size, random_state=42):
+    def run_processing(self, test_size:float=0.0, random_state=42):
         """Run the data processing and save results as CSV files."""
         states = self.process_scene_data()
         if test_size > 0:
@@ -91,19 +85,16 @@ class SceneDataProcessor(BaseTableLoader):
         print(f"Dataset successfully saved to {self.dataoutput}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Merge CAN and camera data, process scene data, and save the final dataset.")
+    
+    parser = argparse.ArgumentParser(description="Merge CAN and sensor data (except data from cameras), process scene data, and save the final dataset.")
     parser.add_argument('--dataroot', required=True, type=str, help='Path to the nuScenes dataset directory.')
     parser.add_argument('--dataoutput', required=True, type=str, help='Path for the output data file directory.')
     parser.add_argument('--version', required=True, type=str, choices=["v1.0-mini", "v1.0-trainval"], help='Version of the nuScenes dataset to process.')
     parser.add_argument('--key_frames', action='store_true', help='Whether to use key frames only.')
-    #parser.add_argument('--sensor', required=True, type=str, help='Sensor modality to process.')
-    parser.add_argument('--camera', action='store_true', help='Whether to add camera information or not.')
     parser.add_argument('--test_size', required=True, type=float, help='Proportion of the dataset to include in the test split.')
     parser.add_argument('--random_state', required=False, type=int, default=42, help='Random state for train-test split.')
 
     args = parser.parse_args()
-    processor = SceneDataProcessor(args.dataroot, args.dataoutput, args.version, args.key_frames)
-    
-    
+    processor = SceneDataProcessor(args.dataroot, args.dataoutput, args.version, args.key_frames)   
     processor.run_processing(args.test_size, args.random_state)
 

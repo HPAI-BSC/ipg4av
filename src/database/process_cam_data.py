@@ -5,7 +5,7 @@ from nuscenes.utils.geometry_utils import BoxVisibility
 import time
 from pyquaternion import Quaternion
 import numpy as np
-from nuscenes.utils.data_classes import Box, view_points
+from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import box_in_image
 from table_loader import BaseTableLoader
 
@@ -28,11 +28,6 @@ class CamDataProcessor(BaseTableLoader):
 
         start_time = time.time()
         print("======\nLoading NuScenes tables for version {}...".format(self.version))
-
-        # self.log = self.__load_table__('log')
-        # print('log loaded')
-        # self.scene = self.__load_table__('scene')
-        # print('scene loaded')
 
 
         self.sample_data = self.__load_table__('sample_data', drop_fields=['next', 'prev', 'timestamp','fileformat'])
@@ -65,29 +60,16 @@ class CamDataProcessor(BaseTableLoader):
         Given a sample in a scene, returns the objects in front of the ego-vehicle.
 
         NOTE:
-        A sample of a scene (frame) has several sample annotations (Bounding Boxes). Each sample annotationops pytohn
-        has 0, 1, or + attributes (e.g., pedestrian moving, etc).
-        The instance of an annotation is described in the instance table, which tracks the number of annotations
-        in which the object appears.
-
-        For each annotation, check from which camera it is from.
-
+        A sample of a scene (frame) has several sample annotations (Bounding Boxes). Each sample annotations has 0, 1, or + attributes (e.g., pedestrian moving, etc).
+        The instance of an annotation is described in the instance table, which tracks the number of annotations in which the object appears.
         """
+
         rows = []
         for sample_token in sample_tokens['token']:
             sample = self.get('sample', sample_token)
 
             # Check if there are any annotations. Retrieve the list of annotations for the sample.
             if sample.get('anns'): 
-                
-                # #####
-                # fig, ax = plt.subplots(1, 1, figsize=(9, 9))
-                # sd_record = self.get('sample_data', sample['data']['CAM_FRONT'])
-                # data_path = osp.join(self.dataroot, sd_record['filename'])
-                # im = Image.open(data_path)
-                # ax.imshow(im)
-                #####
-
 
                 for ann_token in sample['anns']:
                     ann_info = self.get('sample_annotation', ann_token)
@@ -108,12 +90,7 @@ class CamDataProcessor(BaseTableLoader):
                                 selected_anntoken=ann_token
                             )
                             if box:
-                                # box.render(ax, view= np.array(self.get('calibrated_sensor', sd_record['calibrated_sensor_token'])['camera_intrinsic']), normalize=True, colors=('r','r','r'))
-                                # scene_log = self.get('scene', sample['scene_token'])['log_token']
-                                # location = self.get('log', scene_log)['location']
-                                # nusc_map = NuScenesMap(dataroot=self.dataroot, map_name = location)
-                                
-                                 
+                                                             
                                 if ann_info['attribute_tokens']:
                                     for attribute in ann_info['attribute_tokens']: 
                                         attribute_name = self.get('attribute', attribute)['name']                                           
@@ -144,13 +121,7 @@ class CamDataProcessor(BaseTableLoader):
                                         'bbox_center': [self.get_box(ann_token).center[0],self.get_box(ann_token).center[1]]  #x,y only 
                                                                            
                                                                                                               })
-                                #maps_info = nusc_map.layers_on_point(self.get_box(ann_token).center[0], self.get_box(ann_token).center[1], layer_names=['drivable_area', 'carpark_area'])
-                                #ax.text(self.get_box(ann_token).center[0], self.get_box(ann_token).center[1], maps_info, fontsize=10, color='blue')
-                                
-                # ax.axis('off')
-                # plt.title(sample_token)
-                # plt.tight_layout()
-                # plt.savefig(f'img/{sample_token}_{self.alpha}.png')
+                            
         
         detected_objects_df = pd.DataFrame(rows)
         return detected_objects_df
@@ -159,9 +130,6 @@ class CamDataProcessor(BaseTableLoader):
     def get(self, table_name: str, token: str) -> dict:
         """
         Returns a record from table in constant runtime.
-        :param table_name: Table name.
-        :param token: Token of the record.
-        :return: Table record. See README.md for record details for each table.
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
 
@@ -169,10 +137,7 @@ class CamDataProcessor(BaseTableLoader):
     
     def getind(self, table_name: str, token: str) -> int:
         """
-        This returns the index of the record in a table in constant runtime.
-        :param table_name: Table name.
-        :param token: Token of the record.
-        :return: The index of the record in table, table is an array.
+        Returns the index of the record in a table in constant runtime.
         """
         return self._token2ind[table_name][token]
     
@@ -306,16 +271,15 @@ if __name__ == "__main__":
     parser.add_argument('--dataroot', required=True, type=str, help='Path to the nuScenes dataset directory.')
     parser.add_argument('--dataoutput', required=True, type=str, help='Path for the output data file directory.')
     parser.add_argument('--version', required=True, type=str, choices=["v1.0-mini", "v1.0-trainval"], help='Version of the nuScenes dataset to process.')
-    parser.add_argument('--alpha', type=float, default=None, help='Distance within consider detections. Defaults to None if not specified.')
-    #parser.add_argument('--complexity', required=True, type=int, default=0, choices=[0,1], help='Level of complexity of the dataset.')
+    parser.add_argument('--alpha', type=int, default=None, help='Distance within consider detections. Defaults to None if not specified.')
 
     args = parser.parse_args()
-    processor = CamDataProcessor(args.dataroot, args.dataoutput, args.version, args.alpha)#,args.complexity)
+    processor = CamDataProcessor(args.dataroot, args.dataoutput, args.version, args.alpha)
             
     sample_tokens = pd.DataFrame(processor.sample)['token'].to_frame()
 
     df = processor.cam_detection(sample_tokens)
-    output_path = Path(args.dataoutput) / 'cam_data.csv'
+    output_path = Path(args.dataoutput) / f'cam_data_{args.version}_{args.alpha}.csv' 
     df.to_csv(output_path, index=False)
     print(f"Camera detection data saved to {output_path}")
 

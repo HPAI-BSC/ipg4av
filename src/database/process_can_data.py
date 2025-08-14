@@ -12,12 +12,12 @@ import time
 
 class CANDataProcessor(BaseTableLoader):
     
-    def __init__(self, dataroot, dataoutput, version):
+    def __init__(self, dataroot, version):
         super().__init__(dataroot, version)
 
         
         self.dataroot = dataroot
-        self.dataoutput = dataoutput
+        #self.dataoutput = dataoutput
         self.version = version
         self.nusc_can = NuScenesCanBus(dataroot=Path(dataroot))
 
@@ -40,7 +40,7 @@ class CANDataProcessor(BaseTableLoader):
         print("Done loading in {:.3f} seconds.\n======".format(time.time() - start_time))
 
 
-    def process_CAN_data(self):
+    def process_CAN_data(self) -> pd.DataFrame:
 
         log_data = pd.DataFrame(self.log)[['token', 'location']].rename(columns={'token': 'log_token'})
         scene = pd.DataFrame(self.scene).rename(columns={'token': 'scene_token'})
@@ -65,10 +65,9 @@ class CANDataProcessor(BaseTableLoader):
         merged_CAN_df['rain'] = merged_CAN_df.apply(lambda row: 1 if ('rain' in row['description'].lower() or int(row['name'][-4:]) in self.rainy_scenes) else 0, axis=1)
 
         merged_CAN_df.drop(columns=['log_token','description','name'], inplace=True)
-        output_path = Path(self.dataoutput) / 'can_data.csv'
-        merged_CAN_df.to_csv(output_path, index=False)
-        print(f"Processed CAN data saved to {output_path}")
-
+        
+        return merged_CAN_df
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process nuScenes CAN data and save to a file.")
@@ -77,6 +76,11 @@ if __name__ == "__main__":
     parser.add_argument('--version', required=True, type=str, choices=["v1.0-mini", "v1.0-trainval"], help='Version of the nuScenes dataset to process.')
 
     args = parser.parse_args()
-    processor = CANDataProcessor(args.dataroot, args.dataoutput, args.version)
-    processor.process_CAN_data()
+    processor = CANDataProcessor(args.dataroot, args.version)
+    
+    CAN_df = processor.process_CAN_data()
+    output_path = Path(args.dataoutput) / f'can_data_{args.version}.csv'
+    CAN_df.to_csv(output_path, index=False)
+
+    print(f"Processed CAN data saved to {output_path}")
 
