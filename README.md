@@ -17,7 +17,7 @@
 </div>
 
 
-**ipg4av** applies Intention-aware Policy Graphs (IPGs) CITE to explain Autonomous Vehicle (AV) behaviour.
+**ipg4av** applies Intention-aware Policy Graphs (IPGs) [1] to explain Autonomous Vehicle (AV) behaviour.
 It allows you to: 
 - generate Policy Graphs (PGs) from real driving data
 - infer intentions behind AV behaviour
@@ -28,14 +28,14 @@ It allows you to:
 data/sets/
   ├── nuscenes/       # Raw + preprocessed NuScenes data
   ├── policy_graphs/  # Generated PGs
-  └── intentions/     # Generated IPGs + explanations
+  └── intentions/     # Generated IPGs + explanatory results
 
 src/
   ├── database/       # NuScenes preprocessing scripts
   ├── discretizer/    # Discretization methods for PGs
-  ├── experiments/    # Explanation generation scripts (TODO: details)
+  ├── experiments/    # Explanation generation scripts
   ├── metrics/        # PG static metric computation (e.g. entropy)
-  └── policy_graph/   # Extensions of *_pgeon_* [CITE] to build PGs & IPGs for AVs
+  └── policy_graph/   # Extensions of [pgeon](https://github.com/HPAI-BSC/pgeon) package to build PGs & IPGs for AVs
 ```
 ## Getting started
 
@@ -53,7 +53,7 @@ src/
     ```
 
 3. **Download & Preprocess NuScenes Dataset**
-    Follow instructions in [DATASET.md](DATASET.md).
+    Follow instructions in [DATASET.md](src/database/DATASET.md).
 
 
 ## Reproducing Results
@@ -70,9 +70,9 @@ Generate a PG of vehicle behaviour considering scene conditions (city, weather, 
 python3 -m policy_graph.generate_pg \
     --sensor_file full_v1.0-mini.csv \
     --camera_file cam_data_v1.0-mini_18.csv \
-    --city_id s1 \
-    --weather rain \
-    --tod day \
+    --city_id all \
+    --weather all \
+    --tod all \
     --discretizer 1b \
     --alpha 18 
 
@@ -101,7 +101,7 @@ python3 -m policy_graph.generate_pg \
 ```bash
 python3 -m policy_graph.generate_ipg \
     --discretizer 1b \
-    --pg_id PG_nuscenes_mini_Cs1_D1b_Wrain_Tday_18 
+    --pg_id PG_nuscenes_mini_Call_D1b_Wall_Tall_18 
 ```
 pg_id = PG filename without `_nodes.csv` / `_edges.csv`.
 
@@ -125,3 +125,6 @@ TODO: EXTRAAMAS block
 }
 
 ```
+
+## References
+[1]: Gimenez-Abalos, V., Alvarez-Napagao, S., Tormos, A., Cortés, U., & Vázquez-Salceda, J. [Policy Graphs and Intention: answering ‘why’ and ‘how’ from a telic perspective](https://www.ifaamas.org/Proceedings/aamas2025/pdfs/p904.pdf). In Proceedings of the 24th International Conference on Autonomous Agents and Multiagent Systems (AAMAS '25), International Conference for Autonomous Agents and Multiagent Systems (AAMAS '25).  
