@@ -1,6 +1,3 @@
-from typing import Any
-from discretizer.utils import BlockProgress, LanePosition
-import pandas as pd    
 from nuscenes.map_expansion.map_api import NuScenesMap, NuScenesMapExplorer
 from nuscenes.map_expansion import arcline_path_utils
 import numpy as np
@@ -8,6 +5,7 @@ import matplotlib.pyplot as plt
 import datetime
 import math
 from database.utils import create_rectangle, determine_travel_alignment
+from discretizer.predicates import BlockProgress, LanePosition
 from typing import Tuple, List
 from shapely.geometry import Polygon, Point
 from pgeon.environment import Environment
@@ -15,7 +13,8 @@ from pgeon.environment import Environment
 
 class AVEnvironment(Environment):
 
-    def __init__(self, city = "boston-seaport", dataroot = 'data/sets/nuscenes'):
+    def __init__(self, city:str = "all", dataroot:str = 'data/sets/nuscenes'):
+                
         self.city = city
         if city != 'all':
             self.nusc_map = NuScenesMap(dataroot=dataroot, map_name = city)
@@ -186,7 +185,7 @@ class AVEnvironment(Environment):
     #PROCESS NEARBY OBJECTS INFORMATION
     ###################################
 
-    def is_near_stop_area(self, x,y, front_area:Polygon):
+    def is_near_stop_area(self, x:float,y:float, front_area:Polygon):
         """
         Check if there is a stop sign or yield nearby the given pose (x, y).
 
@@ -244,7 +243,7 @@ class AVEnvironment(Environment):
             return False
 
     
-    def is_near_traffic_light(self, yaw, front_area:Polygon, eps=0.1):
+    def is_near_traffic_light(self, yaw:float, front_area:Polygon, eps:float=0.1)-> bool:
         
         """
         Check if there is a traffic light nearby the given pose (x, y).
@@ -291,7 +290,7 @@ class AVEnvironment(Environment):
     #########################
 
       
-    def is_on_divider(self, x,y, yaw, agent_size:Tuple[float, float]) -> bool:
+    def is_on_divider(self, x:float,y:float, yaw:float, agent_size:Tuple[float, float]) -> bool:
         """
         Checks whether the ego vehicle interescts lane and road dividers
         Args:
@@ -315,7 +314,7 @@ class AVEnvironment(Environment):
         return False  
 
     @staticmethod
-    def project_pose_to_lane(pose, lane: List[arcline_path_utils.ArcLinePath], resolution_meters: float = 1):
+    def project_pose_to_lane(pose:Tuple[float, float], lane: List[arcline_path_utils.ArcLinePath], resolution_meters: float = 1):
         """
         Find the closest pose on a lane to a query pose and additionally return the
         distance along the lane for this pose. Note that this function does
@@ -338,7 +337,7 @@ class AVEnvironment(Environment):
 
 
 
-    def get_position_predicates(self,x,y, yaw, eps=0.3, agent_size:Tuple[float, float]=(2,4)):
+    def get_position_predicates(self,x:float,y:float, yaw:float, eps:float=0.3, agent_size:Tuple[float, float]=(2,4)) -> Tuple[BlockProgress, LanePosition]:
         
         """
         Determines the lane progress (which chunk the distance along the lane falls into). The lane is divided into 3 equal chunks.
@@ -439,7 +438,7 @@ class AVEnvironment(Environment):
     
 
 
-    def get_lane_position(self, x, y, yaw, eps=0.3, agent_size: Tuple[float, float] = (2, 4)):
+    def get_lane_position(self, x:float, y:float, yaw:float, eps:float=0.3, agent_size: Tuple[float, float] = (2, 4))-> LanePosition:
         """
         Determines the lane position (Left if on the left lane of the road, RIGHT if on the right lane, and Center if in the center.)
         """
@@ -480,7 +479,7 @@ class AVEnvironment(Environment):
     # PEDESTRIANS AND TWO-WHEELERS
     ##############################    
           
-    def vulnerable_subject_nearby(self,detections):
+    def vulnerable_subject_nearby(self,detections)-> Tuple[int, int]:
 
         """
         Function to check for vulnerable subjects nearby based on state detections from all cameras specified in state_detections.
