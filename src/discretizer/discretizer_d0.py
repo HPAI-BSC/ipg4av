@@ -2,7 +2,7 @@ from database.utils import vector_angle, create_rectangle
 from discretizer.predicates import get_action_id, get_action_from_id, IsTrafficLightNearby,IsZebraNearby, FrontObjects, Action, LanePosition, StopAreaNearby, BlockProgress, NextIntersection, Velocity, Rotation
 from policy_graph.environment import AVEnvironment
 import numpy as np
-from typing import Tuple, Union
+from typing import Tuple, Union, Any, List
 from pgeon.discretizer import Discretizer
 from policy_graph.discretizer import AVPredicate
 import pandas as pd
@@ -134,7 +134,8 @@ class AVDiscretizer(Discretizer):
         return is_stop_nearby, is_zebra_nearby, is_traffic_light_nearby
 
 
-    def assign_intersection_actions(self, trajectory, intersection_info, verbose:bool = False):
+    def assign_intersection_actions(self, trajectory:List[Any], intersection_info:List[Tuple[int, Action]], verbose:bool = False) -> List[Any]:
+        #TODO: improve typing
         """
         Assigns actions based on intersection information.
 

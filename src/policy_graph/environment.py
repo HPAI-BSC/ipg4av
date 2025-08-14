@@ -130,7 +130,7 @@ class AVEnvironment(Environment):
         #return map_poses, fig, ax
 
 
-    def render_rectangle_agent_scene(self, x,y,yaw, agent_size=(2,4)):
+    def render_rectangle_agent_scene(self, x:float,y:float,yaw:float, agent_size:Tuple[float,float]=(2,4)):
             #Render agent as a rectangle and show its heading direction vector compared to the direction of the lane, for each sample in the scene.
 
             road_segment_token = self.nusc_map.record_on_point(x,y, 'road_segment')
@@ -340,7 +340,7 @@ class AVEnvironment(Environment):
 
     def get_position_predicates(self,x:float,y:float, yaw:float, eps:float=0.3, agent_size:Tuple[float, float]=(2,4)) -> Tuple[BlockProgress, LanePosition]:
         
-        """
+        """pd.Dataframe
         Determines the lane progress (which chunk the distance along the lane falls into). The lane is divided into 3 equal chunks.
         Determines the lane position:
         - Aligned if the vehicle is on a lane with its same direction of travel,
