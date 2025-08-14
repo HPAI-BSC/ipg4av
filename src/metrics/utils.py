@@ -52,12 +52,12 @@ def compute_scene_nll(pg_agent:PGBasedPolicy, trajectory:List, eps= 0.00001, ver
 
 
 
-def compute_test_nll(pg_agent:PGBasedPolicy, scenes: pd.DataFrame, detections:pd.DataFrame, verbose: bool = False, eps =  0.00001) -> pd.DataFrame:
+def compute_global_nll(pg_agent:PGBasedPolicy, scenes: pd.DataFrame, detections:pd.DataFrame, verbose: bool = False, eps =  0.00001) -> pd.DataFrame:
         """
-        Computes the likelihood of trajectory for all scenes in the test set.
+        Computes the likelihood of trajectory for all scenes in a set.
 
         Args:
-            scenes (test set): DataFrame containing the test set with a 'scene_token' column
+            scenes set: DataFrame containing the test set with a 'scene_token' column
             detections: DataFrame containing information about detections for each sample in a scene.
             verbose: If True, prints detailed information during testing
             policy_mode: if 'original', computes the metric of the original agent. If 'random', computes the metrics for a random agent (P(a) is uniformly distributed.). 
