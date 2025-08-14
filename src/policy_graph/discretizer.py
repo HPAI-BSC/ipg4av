@@ -2,7 +2,7 @@ from typing import Union, Sequence, List
 from enum import Enum
 from pgeon.discretizer import Predicate
 
-class AVPredicate(Predicate):
+class AVPredicate(Predicate): #TODO: match pgeon Predicate definition
     def __init__(self, predicate: Union[Enum, type], value: Union[Sequence[Union[Enum, int]], Enum, int]):
         self.predicate = predicate
         # Ensure value is always stored as a list for consistency
