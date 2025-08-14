@@ -1,16 +1,38 @@
-import random
 from sklearn.metrics import auc
 import numpy as np
 from typing import Set, Dict, List, Tuple
 from policy_graph.intention_introspector import AVIntentionIntrospector
-from policy_graph.policy_graph import AVPolicyGraph
 from policy_graph.desire import AVDesire
-from policy_graph.utils import get_trajectory_metrics
+from policy_graph.discretizer import AVPredicate
 import matplotlib.pyplot as plt
-import networkx as nx
+from experiments.desire_config import ANY
 import math
+import os
 
-def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int, int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, save=False):#, fill_desires = True ):
+
+def get_trajectory_metrics(ii: AVIntentionIntrospector, trajectory:List[Tuple[Tuple[AVPredicate], int]]):
+    intention_track = []
+    prob_track = []
+    desire_fulfill_track = {}
+    episode_length = len(trajectory)
+
+    for t, (state, action_idx) in enumerate(trajectory):
+        curr_node = state
+        prob_track.append(ii.pg.nodes[curr_node]['probability'])
+        intention_track.append(ii.intention.get(curr_node, {}))
+        
+        for desire in ii.desires:
+            curr_intention = ii.intention.get(curr_node, {})
+            if curr_intention.get(desire, 0) > 0.999:
+                desire_fulfill_track[t] = desire.name
+            #if ii.check_desire(curr_node, desire.clause, desire.actions) is not None and action_idx in desire.actions:
+                #desire_fulfill_track[t] = desire.name
+    return desire_fulfill_track, episode_length, intention_track, prob_track
+
+    
+
+
+def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[Tuple[AVPredicate], int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, output_folder:str=None):#, fill_desires = True ):
 
     """
     Plot intention progression of a scene over the specified desires.
@@ -22,7 +44,7 @@ def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int,
         desires = ii.desires
 
     desire_names = [d.name for d in desires]
-    desire_color = {d_name: c for d_name, c in zip(desire_names, plt.cm.get_cmap('tab20').colors)} #NOTE: handles max 20 diff. colors
+    desire_color = {d_name: c for d_name, c in zip(desire_names, plt.cm.get_cmap('tab20').colors)} #NOTE: handles max 20 diff. colors / desires
 
     fig = plt.figure(figsize=(episode_length/2, 10))
     ax = plt.gca()
@@ -30,8 +52,8 @@ def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int,
         d_name = desire.name
         intention_vals = [entry.get(desire, 0) for entry in intention_track] 
         
-        #Filter intetntions in the scene to not overload the plot  
-        if sum(intention_vals) >min_int_threshold:   
+        #Filter intentions in the scene to not overload the plot  
+        if max(intention_vals) > min_int_threshold: #sum(intention_vals) >min_int_threshold:   
             ax.plot(range(episode_length), intention_vals, label=d_name, color=desire_color[d_name],linestyle='dotted', linewidth=5 )
          
     ax.legend(loc='best', facecolor='white', framealpha = 1,  fontsize=24, frameon=True)
@@ -46,13 +68,13 @@ def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int,
         if d_name in desire_names:
             ax.vlines(t, -0.05, 1.05, label=d_name, colors=desire_color[d_name], linestyles='-', linewidth=4)
     plt.title(f'Intention evolution in scene {scene_id}', fontsize=37)
-    if save:
-        plt.savefig(f'./img/intention_progression_{scene_id}.png', bbox_inches = 'tight', dpi=200)
+    if output_folder:
+        plt.savefig(f'{output_folder}/int_progress_{scene_id}.png', bbox_inches = 'tight', dpi=200)
         
 
 
 
-def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int, int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, save=False):
+def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[int, int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, output_folder:str=None):
     from matplotlib.animation import FuncAnimation
 
     """
@@ -64,7 +86,7 @@ def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[
         desires = ii.desires
 
     desire_names = [d.name for d in desires]
-    desire_color = {d_name: c for d_name, c in zip(desire_names, plt.cm.get_cmap('tab20').colors)}
+    desire_color = {d_name: c for d_name, c in zip(desire_names, plt.cm.get_cmap('tab20').colors)} #NOTE: handles max 20 diff. colors / desires
 
     fig, ax = plt.subplots(figsize=(episode_length / 2, 10))
     ax.set_xlim(0, episode_length)
@@ -74,13 +96,14 @@ def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[
     ax.tick_params(axis='x', labelsize=22)
     ax.tick_params(axis='y', labelsize=22)
     ax.set_title(f'Intention evolution in scene {scene_id}', fontsize=25)
+    
     # Precompute intention data
     lines = {}
     data = {d.name: [entry.get(d, 0) for entry in intention_track] for d in desires}
     
     for d in desires:
         d_name = d.name
-        if sum(data[d_name]) > min_int_threshold:
+        if max(data[d_name]) > min_int_threshold:#sum(data[d_name]) > min_int_threshold:
             line, = ax.plot([], [], label=d_name, color=desire_color[d_name], linestyle='dotted', linewidth=5)
             lines[d_name] = line
 
@@ -98,10 +121,9 @@ def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[
 
     anim = FuncAnimation(fig, update, frames=episode_length, init_func=init, blit=True, repeat=False)
 
-    if save:
-        #anim.save(f'./img/intention_progression_{scene_id}.mp4', fps=5, dpi=200)  # or use .gif
+    if output_folder:
         from matplotlib.animation import PillowWriter
-        anim.save(f'./img/intention_progression_{scene_id}.gif', writer=PillowWriter(fps=5), dpi=200)
+        anim.save(f'{output_folder}/int_progress_{scene_id}.gif', writer=PillowWriter(fps=5), dpi=200) #.mp4
 
     else:
         plt.show()
@@ -109,9 +131,67 @@ def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[
              
 
 
-def roc_curve(discretisers_info: Dict[str, AVPolicyGraph], desires:Set[AVDesire]):
+def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:float=0.1) -> Dict[str, float]:
     """
-    Generate ROC curve for intention metrics and find the best thresholds for each discretizer.
+    Generate ROC curve for intention metrics and find the best threshold for each discretizer.
+    
+    Args:
+        ipgs: intentional policy graphs with different discretizers
+        output_folder: Path to save the generated ROC curve plot. 
+        step: Step size of commitment threshold.
+
+    Returns:
+        A dictionary of the best thresholds for each discretizer.
+    """
+
+    thresholds = np.arange(0, 1, step)
+    best_thresholds = {}
+    
+    plt.figure(figsize=(10, 6))
+
+
+    for ipg in ipgs:
+        
+        disc_id = ipg.pg.discretizer.id
+        num_thresholds = len(thresholds)
+        intention_probs = np.zeros(num_thresholds)
+        expected_probs = np.zeros(num_thresholds)
+        combined_scores = np.zeros(num_thresholds)
+                
+        for idx, threshold in enumerate(thresholds):
+            intention_probs[idx], expected_probs[idx] = ipg.get_intention_metrics(commitment_threshold=threshold, desire=ANY)
+        
+        combined_scores = intention_probs + expected_probs
+        
+        best_idx = np.argmax(combined_scores)
+        best_threshold = thresholds[best_idx]
+        best_thresholds[disc_id] = best_threshold
+        
+        roc_auc = auc(intention_probs, expected_probs)
+
+        print(f'Discretizer D{disc_id}: Best Threshold: {best_threshold:.2f},  (AUC = {roc_auc:.2f})')
+
+        plt.plot(intention_probs, expected_probs, label=f'D{disc_id}')           
+                
+    plt.xlabel('Intention Probability', fontsize=15)
+    plt.ylabel('Expected Intention Probability', fontsize = 15)
+    plt.title(f'Intention Metrics for ANY Desire', fontsize  = 17)
+    plt.legend(fontsize=13)
+    plt.grid(True)
+    #plt.tight_layout()
+
+    if output_folder:
+        plt.savefig(f'{output_folder}/roc_s{step}.png', bbox_inches = 'tight', dpi=100)
+    else:
+        plt.show()
+
+    return best_thresholds
+
+
+"""
+def roc_curve(discretisers_info: Dict[str, AVPolicyGraph], desires:Set[AVDesire], output_folder:str='', step:float=0.1):
+    '''
+    Generate ROC curve for intention metrics and find the best threshold for each discretizer.
     
     Args:
         discretisers_info: Dictionary mapping discretizer ID to policy graph.
@@ -120,46 +200,52 @@ def roc_curve(discretisers_info: Dict[str, AVPolicyGraph], desires:Set[AVDesire]
 
     Returns:
         A dictionary of the best thresholds for each discretizer.
-    """
+    '''
+        from experiments.desire_config import DESIRE_MAPPING
+
+    thresholds = np.arange(0, 1, step)
+    best_thresholds = {}
     
     plt.figure(figsize=(10, 6))
-    thresholds = np.arange(0, 1, 0.1)
-    best_thresholds = {}
-    any = AVDesire("any", None, set())
+
+
     for discretizer_id, pg in discretisers_info.items():
         
         num_thresholds = len(thresholds)
-        intention_probabilities = np.zeros(num_thresholds)
-        expected_probabilities = np.zeros(num_thresholds)
+        intention_probs = np.zeros(num_thresholds)
+        expected_probs = np.zeros(num_thresholds)
         combined_scores = np.zeros(num_thresholds)
         
         ii = AVIntentionIntrospector(desires, pg)
-
-        for i, threshold in enumerate(thresholds):
-
-            intention_prob, expected_prob = ii.get_intention_metrics(commitment_threshold=threshold, desire=any)
-            intention_probabilities[i] = intention_prob
-            expected_probabilities[i] = expected_prob
-            combined_scores[i] = intention_prob + expected_prob
-
-        roc_auc = auc(intention_probabilities, expected_probabilities)
         
-        best_index = np.argmax(combined_scores)
-        best_threshold = thresholds[best_index]
+        for idx, threshold in enumerate(thresholds):
+            intention_probs[idx], expected_probs[idx] = ii.get_intention_metrics(commitment_threshold=threshold, desire=ANY)
+            #combined_scores[i] = intention_prob + expected_prob
+
+        combined_scores = intention_probs + expected_probs
+        
+        best_idx = np.argmax(combined_scores)
+        best_threshold = thresholds[best_idx]
         best_thresholds[discretizer_id] = best_threshold
         
+        roc_auc = auc(intention_probs, expected_probs)
+
         print(f'Discretizer D{discretizer_id}: Best Threshold: {best_threshold:.2f},  (AUC = {roc_auc:.2f})')
 
-        plt.plot(intention_probabilities, expected_probabilities, label=f'D{discretizer_id}')           
+        plt.plot(intention_probs, expected_probs, label=f'D{discretizer_id}')           
                 
     plt.xlabel('Intention Probability', fontsize=15)
     plt.ylabel('Expected Intention Probability', fontsize = 15)
-    plt.title('Intention Metrics for $\mathit{any}$ Desire', fontsize  = 17)
+    plt.title(f'Intention Metrics for $\mathit{ANY.name}$ Desire', fontsize  = 17)
     plt.legend(fontsize=13)
     plt.grid(True)
-    plt.savefig(f'./img/roc.png', bbox_inches = 'tight', dpi=100)
+    plt.tight_layout()##
+
+    if output_folder:
+        plt.savefig(f'{output_folder}/roc.png', bbox_inches = 'tight', dpi=100)
     
     return best_thresholds
+"""
 
 
 def annotate_bars(rects, ax, fontsize=8):
@@ -173,17 +259,17 @@ def annotate_bars(rects, ax, fontsize=8):
        )
 
 
-def plot_all_metrics(metrics_data, discretizer_id, output_folder, c=0.5, desire_type='',metric_type='Desire', fig_size=(45, 15), y_lim=1.15, colors=['#008080', '#FF7F50']):
+def plot_metrics(metrics_data:Dict[str, Tuple[float, float]], discretizer_id:str, output_folder:str, c:float=0.5, metric_type:str='Desire', fig_size:Tuple[int, int]=(45, 15), y_lim:float=1.15, colors:Tuple[str,str]=['#008080', '#FF7F50']):
     """
     Displays bar plots with desire or intention metrics for each desire.
 
     Args:
-        metrics_data: Dictionary mapping desires to their respective metric values.
+        metrics_data: Dictionary mapping desire names to their respective metric values.
         discretizer_id: ID of the discretizer being visualized.
         metric_type: Type of metric to display ('Desire' or 'Intention').
         fig_size: Size of the figure.
         output_folder: Path to store the generated plots.
-        y_lim: Limit of y value.
+        y_lim: Limit of y value for better plot clarity.
     """
     desires = list(metrics_data.keys())
     val1 = np.array([metrics_data[desire][0] for desire in desires])
@@ -200,7 +286,7 @@ def plot_all_metrics(metrics_data, discretizer_id, output_folder, c=0.5, desire_
 
     ax.set_ylabel('Probability', fontsize=35)
     ax.set_ylim(0, y_lim)
-    ax.set_title(f'{"Intention" if metric_type == "Intention" else "Desire"} metrics for {desire_type} desires,  C = {c}' if metric_type == 'Intention' else 'Desire Metrics', fontsize=50)
+    ax.set_title(f'Intention Metrics, C = {c}' if metric_type == 'Intention' else 'Desire Metrics', fontsize=50)
 
     ax.set_xticks(x)
     ax.set_xticklabels(desires, fontsize=35)
@@ -214,10 +300,11 @@ def plot_all_metrics(metrics_data, discretizer_id, output_folder, c=0.5, desire_
 
     ax.legend(ncol=2, fontsize=35, loc='upper left', facecolor='white')
 
-    plt.savefig(f'{output_folder}/{metric_type}_{desire_type}_{discretizer_id}.png', bbox_inches='tight', dpi=200)
+    save_path = f"{output_folder}/{metric_type}_{discretizer_id}.png"
+    plt.savefig(save_path, bbox_inches='tight', dpi=200)
 
 
-def plot_all_metrics_per_desire(desires_data, desire, output_folder, metric_type='Desire', y_lim=1, colors=['#008080', '#FF7F50']):
+def plot_metrics_per_desire(desires_data, desire, output_folder, metric_type='Desire', y_lim=1, colors=['#008080', '#FF7F50']):
     """
     Displays bar plots for all discretizers for a specific desire or intention.
     
@@ -277,75 +364,5 @@ def plot_all_metrics_per_desire(desires_data, desire, output_folder, metric_type
         fig.delaxes(axes[j])
 
     plt.tight_layout()
-    plt.savefig(f'{output_folder}/desire_metrics.png', dpi=100)
+    plt.savefig(f'{output_folder}/desire_metrics_{desire.name}.png', dpi=100)
 
-
-
-def plot_pg(pg:AVPolicyGraph, allow_recursion=False, font_size=7, output_folder = '', training_id='', layout = 'circular'):
-        """
-        Normal plots for the graph
-        """
-        num_of_decimals = 2
-
-        if layout == 'circular':
-            pos = nx.circular_layout(pg)
-        elif layout == 'spring':
-            pos = nx.spring_layout(pg, scale = 5)
-        elif layout == 'random':
-            pos = nx.random_layout(pg)
-        elif layout == 'spectral':
-            pos = nx.spectral_layout(pg)
-        elif layout == 'shell':
-            pos = nx.shell_layout(pg)
-        elif layout == 'fr':
-          pos = nx.fruchterman_reingold_layout(pg)
-
-        # Save the color and label of each edge
-        edge_labels = {}
-        edge_colors = []
-        for edge in pg.edges:
-            if edge[0] != edge[1] or allow_recursion:
-                attributes = pg.get_edge_data(edge[0], edge[1])
-                for key in attributes:
-                  weight = attributes[key]['probability']
-                  edge_labels[(edge[0], edge[1])] = '{} - {}'.format(
-                    attributes[key]['action'],
-                    round(weight, num_of_decimals)
-                  )
-                  edge_colors.append('#332FD0')
-        nodes = {node: "" for node in pg.nodes() 
-                 if pg.in_degree(node) + pg.out_degree(node) > 0}
-        
-        # Get node colors based on their component
-        connected_components = list(nx.strongly_connected_components(pg))
-        color_map = {}
-        for component in connected_components:
-            color = get_random_color()
-            for node in component:
-                
-                color_map[node] = color
-        node_colors = [color_map[node] for node in pg.nodes()]
-        
-        nx.draw(
-            pg, pos,
-            edge_color=edge_colors,
-            width=1,
-            linewidths=1,
-            node_size=8,
-            node_color=node_colors,
-            alpha=0.8,
-            arrowsize=1.5,
-            labels=nodes,
-            font_size=font_size,
-            edgelist=[edge for edge in list(pg.edges()) if edge[0] != edge[1] or allow_recursion]
-        )
- 
-        if output_folder:
-            plt.savefig(f'{output_folder}/{training_id}.png')
-        else:
-            plt.show()
-
-
-
-def get_random_color():
-      return "#{:06x}".format(random.randint(0, 0xFFFFFF))
