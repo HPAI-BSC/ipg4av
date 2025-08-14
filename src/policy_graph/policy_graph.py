@@ -1,19 +1,19 @@
 from enum import Enum
-from typing import Tuple, Any, List, Set
+from typing import Tuple, Any, List
 import tqdm
-from pgeon.discretizer import Discretizer
 from policy_graph.discretizer import AVPredicate
 import pandas as pd
-from discretizer.utils import Velocity, BlockProgress,IdleTime
+import networkx as nx
+from discretizer.predicates import Velocity, BlockProgress,IdleTime
 from discretizer.discretizer_d0 import AVDiscretizer
 from policy_graph.environment import AVEnvironment
-from pgeon.policy_graph import PolicyGraph, PGBasedPolicy, PGBasedPolicyMode, PGBasedPolicyNodeNotFoundMode
+from pgeon.policy_graph import PolicyGraph, PGBasedPolicy, PGBasedPolicyMode#, PGBasedPolicyNodeNotFoundMode
 
 class AVPolicyGraph(PolicyGraph):
 
     def __init__(self,
                  environment: AVEnvironment,
-                 discretizer: Discretizer
+                 discretizer: AVDiscretizer
                  ):
         super().__init__(environment, discretizer)
         
@@ -23,9 +23,9 @@ class AVPolicyGraph(PolicyGraph):
     ######################
 
     def _run_episode(self,
-                     scene,
-                     scene_detections,
-                     verbose = False
+                     scene:pd.DataFrame,
+                     scene_detections:pd.DataFrame,
+                     verbose:bool = False
                      ) -> List[Any]:
 
         """
@@ -42,10 +42,25 @@ class AVPolicyGraph(PolicyGraph):
         intersection_info = []
 
         consecutive_stopped_count = 0
+        scene_len = len(scene)
 
-        for i in range(len(scene)-1):
-            sample_detections = scene_detections[scene_detections['sample_token'] == scene.iloc[i]['sample_token']]
-            disc_state, action_id = self.discretizer._discretize_state_and_action(scene.iloc[i], scene.iloc[i+1], sample_detections)
+        # pre-group scene_detections by sample_token for faster lookup
+        detections_groups = scene_detections.groupby('sample_token')
+
+
+        for i in range(scene_len-1):
+            
+            curr_row = scene.iloc[i]
+            next_row = scene.iloc[i + 1]
+            sample_token = curr_row['sample_token']
+            
+            if sample_token in detections_groups.groups:
+                sample_detections = detections_groups.get_group(sample_token)
+            else:
+                sample_detections = pd.DataFrame(columns=scene_detections.columns)
+
+            #sample_detections = scene_detections[scene_detections['sample_token'] == scene.iloc[i]['sample_token']]
+            disc_state, action_id = self.discretizer._discretize_state_and_action(curr_row, next_row, sample_detections)
             
             #check for intersection start
             block_progress = next((predicate for predicate in disc_state if predicate.predicate.__name__ == 'BlockProgress'), None)
@@ -53,49 +68,64 @@ class AVPolicyGraph(PolicyGraph):
             if block_progress == AVPredicate(BlockProgress, BlockProgress.INTERSECTION) and not in_intersection:
                 in_intersection = True
                 intersection_start = i
-                start_intersection_x, start_intersection_y = scene.iloc[i][['x', 'y']] if i > 0 else scene.iloc[i+1][['x', 'y']]
-                pre_intersection_x, pre_intersection_y = scene.iloc[i-1][['x', 'y']] if i > 0 else scene.iloc[i][['x', 'y']]
 
+                if i > 0:
+                    start_intersection_x, start_intersection_y = curr_row[['x', 'y']]
+                    pre_intersection_x, pre_intersection_y = scene.iloc[i - 1][['x', 'y']]
+                else:
+                    start_intersection_x, start_intersection_y = next_row[['x', 'y']]
+                    pre_intersection_x, pre_intersection_y = curr_row[['x', 'y']]
             
             #check for intersection end
             if in_intersection and block_progress != AVPredicate(BlockProgress, BlockProgress.INTERSECTION):
 
                 in_intersection = False
 
-                end_intersection_x, end_intersection_y = scene.iloc[i][['x', 'y']] if i+1<len(scene) else scene.iloc[i-1][['x', 'y']]
-                post_intersection_x, post_intersection_y = scene.iloc[i+1][['x', 'y']] if i+1<len(scene) else scene.iloc[i][['x', 'y']]
+                if i + 1 < scene_len:
+                    end_intersection_x, end_intersection_y = curr_row[['x', 'y']]
+                    post_intersection_x, post_intersection_y = next_row[['x', 'y']]
+                else:
+                    end_intersection_x, end_intersection_y = scene.iloc[i - 1][['x', 'y']]
+                    post_intersection_x, post_intersection_y = curr_row[['x', 'y']]
 
                 intersection_action = AVDiscretizer.determine_intersection_action((pre_intersection_x, pre_intersection_y, start_intersection_x, start_intersection_y), (end_intersection_x, end_intersection_y, post_intersection_x, post_intersection_y))
                 intersection_info.append((intersection_start, intersection_action))
             
             
-            
+            # handle velocity and stopped count ONLY if discretizer id has '2'
             if '2' in self.discretizer.id:
                 velocity = next((predicate for predicate in disc_state if predicate.predicate.__name__ == 'Velocity' ), None)
                 if velocity == AVPredicate(Velocity, Velocity.STOPPED):
                     consecutive_stopped_count+=1
                     if consecutive_stopped_count>1:
                         state = list(disc_state)
+                        
+                        # replace IdleTime predicate with updated count
                         idle_predicate_idx = next((i for i, predicate in enumerate(state) if predicate.predicate.__name__ == 'IdleTime'), None)
                         state[idle_predicate_idx] = AVPredicate(IdleTime,[IdleTime(consecutive_stopped_count-1)])
                         disc_state = tuple(state)
                 else:
-                    consecutive_stopped_count=0
+                    consecutive_stopped_count=0 # reset count if moving
 
 
 
-
+            # if discretizer id has '0', filter out BlockProgress predicates
             if '0' in self.discretizer.id:
-                # Filter out the BlockProgress predicate from the discretized state
                 disc_state = tuple(predicate for predicate in disc_state if predicate.predicate.__name__ != 'BlockProgress')
             trajectory.extend([disc_state, action_id])        
 
 
-        #add last state
-        last_state_to_discretize = scene.iloc[len(scene)-1][self.discretizer.vehicle_state_columns]
-        last_state_detections = scene_detections[scene_detections['sample_token'] == scene.iloc[len(scene)-1]['sample_token']]
+        #process last state (no action after)
+        last_row = scene.iloc[scene_len - 1]
+        last_sample_token = last_row['sample_token']
+        if last_sample_token in detections_groups.groups:
+            last_state_detections = detections_groups.get_group(last_sample_token)
+        else:
+            last_state_detections = pd.DataFrame(columns=scene_detections.columns)
 
-        disc_last_state = self.discretizer.discretize(last_state_to_discretize, last_state_detections)
+        # discretize last state only
+        disc_last_state = self.discretizer.discretize(last_row[self.discretizer.vehicle_state_columns], last_state_detections)
+        
         if '0' in self.discretizer.id:
             disc_last_state = tuple(predicate for predicate in disc_last_state if predicate.predicate.__name__ != 'BlockProgress')
 
@@ -115,7 +145,7 @@ class AVPolicyGraph(PolicyGraph):
 
         trajectory.append(disc_last_state)
 
-
+        #assign intersection actions to the trajectory after processing
         self.discretizer.assign_intersection_actions(trajectory, intersection_info, verbose)                
 
         return trajectory
@@ -128,20 +158,36 @@ class AVPolicyGraph(PolicyGraph):
             verbose = True
             ):
 
+        """
+        Fit the policy graph using scenes and detections data.
+
+        Args:
+            scenes: DataFrame containing scene data with 'scene_token' column.
+            detections: DataFrame containing detection data with 'scene_token' column.
+            update: Whether to update existing policy graph or clear before.
+            verbose: Whether to print logs and progress bar.
+        """
         if not update:
             self.clear()
             self._trajectories_of_last_fit = []
             self._is_fit = False
 
         scene_groups = scenes.groupby('scene_token')
+        detections_groups = detections.groupby('scene_token')
+
         progress_bar = tqdm.tqdm(total=len(scene_groups), desc='Fitting PG from scenes...')
 
-        progress_bar.set_description('Fitting PG from scenes...')
+        for scene_token, scene_data in scene_groups: 
+            if verbose:
+                print(f'Scene token: {scene_token}')
+            
+            if scene_token in detections_groups.groups:
+                scene_detections = detections_groups.get_group(scene_token)
+            else:
+                scene_detections = pd.DataFrame(columns=detections.columns)
 
-        for scene_token, groups in scene_groups:
-            scene_detections = detections[detections['scene_token']==scene_token]
-            print(f'Scene token: {scene_token}')
-            trajectory_result = self._run_episode(groups, scene_detections, verbose)
+            #scene_detections = detections_groups.get_group(scene_token)
+            trajectory_result = self._run_episode(scene_data, scene_detections, verbose)
             self._update_with_trajectory(trajectory_result)
             self._trajectories_of_last_fit.append(trajectory_result)
 
@@ -153,6 +199,53 @@ class AVPolicyGraph(PolicyGraph):
 
         return self
     
+    
+
+    def remove_isolated_nodes(self, verbose:bool=True):
+        """
+        Remove isolated (weakly connected component of size 1) nodes from a policy graph
+        and clean them from self._trajectories_of_last_fit to avoid saving errors.
+        """
+        isolated_nodes = {
+            next(iter(component))
+            for component in nx.weakly_connected_components(self) # generator
+            if len(component) == 1
+        }
+        if not isolated_nodes:
+            if verbose:
+                print("No isolated nodes found.")
+            return 
+        
+        if verbose:
+            print(f"Removing {len(isolated_nodes)} isolated nodes")
+        
+        # remove nodes from PG
+        self.remove_nodes_from(isolated_nodes)
+
+        # remove node information from trajectories
+        if hasattr(self, "_trajectories_of_last_fit"):
+            cleaned_trajectories = []
+            for traj in self._trajectories_of_last_fit:
+                cleaned_traj = []
+                skip_next_action = False
+                for idx, elem in enumerate(traj):
+                    if idx % 2 == 0:  # state position
+                        if elem not in isolated_nodes:
+                            cleaned_traj.append(elem)
+                            skip_next_action = False
+                        else:
+                            skip_next_action = True  
+                    else:  # action position
+                        if not skip_next_action:
+                            cleaned_traj.append(elem)
+
+                if cleaned_traj:
+                    cleaned_trajectories.append(cleaned_traj)
+
+            self._trajectories_of_last_fit = cleaned_trajectories
+
+    
+
 
 
 
@@ -160,7 +253,7 @@ class AVPolicyGraph(PolicyGraph):
     # EXPLANATIONS
     ######################
 
-    def _is_predicate_in_pg_and_usable(self, predicate) -> bool:
+    def _is_predicate_in_pg_and_usable(self, predicate:Tuple[Enum]) -> bool:
         return self.has_node(predicate) and len(self[predicate]) > 0
         
     def get_nearest_predicate(self, input_predicate: Tuple[Enum], verbose=False):
@@ -199,7 +292,7 @@ class AVPolicyGraph(PolicyGraph):
             return new_predicate     
 
 
-    def question3(self, predicate, action, greedy=False, verbose=False):
+    def question3(self, predicate:Tuple[Enum], action, greedy:bool=False, verbose:bool=False)-> List[Any]:
         """
         Answers the question: Why do you not perform action X in state Y?
         """
@@ -234,6 +327,8 @@ class AVPolicyGraph(PolicyGraph):
     
 
 
+"""
+
 class AVPGBasedPolicy(PGBasedPolicy):
     def __init__(self,
                  policy_graph: AVPolicyGraph,
@@ -244,7 +339,7 @@ class AVPGBasedPolicy(PGBasedPolicy):
         
         self.pg = policy_graph
         self.dt=0.5
-        self.wheel_base = 2.588 #Ref: https://forum.nuscenes.org/t/dimensions-of-the-ego-vehicle-used-to-gather-data/550
+        self.wheel_base = 2.588 #Reference: https://forum.nuscenes.org/t/dimensions-of-the-ego-vehicle-used-to-gather-data/550
         self.min_steer_angle = -7.7
         self.max_steer_angle = 6.3
         
@@ -262,7 +357,7 @@ class AVPGBasedPolicy(PGBasedPolicy):
     
     
     def _get_action_probability(self, predicate, action_id:int )->float:
-        """
+        '''
         Returns the probability P(a|s) for a given action and state (predicate).
 
         Args:
@@ -271,7 +366,7 @@ class AVPGBasedPolicy(PGBasedPolicy):
 
         Returns:
             The probability of the given action for the given state.
-        """
+        '''
         action_weights = self._get_action_probability_dist(predicate)
         action_dict = dict(action_weights)
         return action_dict.get(action_id, 0.0)
@@ -295,30 +390,8 @@ class AVPGBasedPolicy(PGBasedPolicy):
                 raise NotImplementedError
         return self._get_action(action_prob_dist) 
 
-
+"""
 
     
 
-    def get_transition_prob(self, s_t, s_t1, a_t, eps):
-        """
-        Args:
-            s_t: Current state.
-            s_t1: Next state.
-            a_t: Action taken.
-            eps: Small constant to avoid log of zero.
-
-        Returns:
-            P(s',a|s)
-        """
-        edge_data = self.pg.get_edge_data(s_t, s_t1, default={})
-        
-        if a_t in edge_data and 'probability' in edge_data[a_t]:
-            probability = edge_data[a_t]['probability']
-        else:
-            probability = eps
-
-        return max(probability, eps)
-
-
-
-        
+    
