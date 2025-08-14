@@ -3,6 +3,7 @@ from discretizer.discretizer_d0 import AVDiscretizer
 from policy_graph.environment import AVEnvironment
 from policy_graph.discretizer import AVPredicate
 import numpy as np
+import pandas as pd
 from typing import Tuple, Union
 
 class AVDiscretizerD1(AVDiscretizer):
@@ -14,7 +15,7 @@ class AVDiscretizerD1(AVDiscretizer):
     ### New AVPredicates and Discretizers ###
     #########################################
 
-    def discretize_vulnerable_subjects(self, state_detections):
+    def discretize_vulnerable_subjects(self, state_detections:pd.Dataframe):
 
         n_peds, n_bikes = self.environment.vulnerable_subject_nearby(state_detections)
         is_ped_nearby = PedestrianNearby.YES if n_peds>0 else PedestrianNearby.NO
@@ -29,7 +30,7 @@ class AVDiscretizerD1(AVDiscretizer):
     ##################################
 
     
-    def discretize(self, state: np.ndarray, detections=None) -> Tuple[AVPredicate, ...]:
+    def discretize(self, state: np.ndarray, detections:pd.Dataframe=None) -> Tuple[AVPredicate, ...]:
 
         predicates = super().discretize(state, detections)
         pedestrian_predicate, bike_predicate = self.discretize_vulnerable_subjects(detections)

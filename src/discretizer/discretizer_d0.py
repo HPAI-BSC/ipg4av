@@ -5,6 +5,7 @@ import numpy as np
 from typing import Tuple, Union
 from pgeon.discretizer import Discretizer
 from policy_graph.discretizer import AVPredicate
+import pandas as pd
 
 class AVDiscretizer(Discretizer):
     def __init__(self, environment: AVEnvironment, id:str):     
@@ -33,7 +34,7 @@ class AVDiscretizer(Discretizer):
     ##################################
 
     def discretize(self,
-                   state: np.ndarray, detections=None
+                   state: np.ndarray, detections:pd.DataFrame=None
                    ) -> Tuple[AVPredicate, ...]:
         x, y, velocity, steer_angle, yaw = state 
         block_progress, lane_pos_pred  = self.discretize_position(x,y,yaw)
@@ -54,7 +55,7 @@ class AVDiscretizer(Discretizer):
         )
         
 
-    def discretize_detections(self, detections):
+    def discretize_detections(self, detections:pd.Dataframe):
         tot_count = 0
         for _, row in detections.iterrows():
 

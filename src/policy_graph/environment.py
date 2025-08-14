@@ -9,6 +9,7 @@ from discretizer.predicates import BlockProgress, LanePosition
 from typing import Tuple, List
 from shapely.geometry import Polygon, Point
 from pgeon.environment import Environment
+import pandas as pd
 
 
 class AVEnvironment(Environment):
@@ -479,7 +480,7 @@ class AVEnvironment(Environment):
     # PEDESTRIANS AND TWO-WHEELERS
     ##############################    
           
-    def vulnerable_subject_nearby(self,detections)-> Tuple[int, int]:
+    def vulnerable_subject_nearby(self,detections:pd.Dataframe)-> Tuple[int, int]:
 
         """
         Function to check for vulnerable subjects nearby based on state detections from all cameras specified in state_detections.

@@ -3,6 +3,7 @@ from discretizer.discretizer_d1 import AVDiscretizerD1
 from policy_graph.environment import AVEnvironment
 from policy_graph.discretizer import AVPredicate
 import numpy as np
+import pandas as pd
 from typing import Tuple, Union
 
 
@@ -16,7 +17,7 @@ class AVDiscretizerD2(AVDiscretizerD1):
     ##################################
 
     
-    def discretize(self, state: np.ndarray, detections=None) -> Tuple[AVPredicate, ...]:
+    def discretize(self, state: np.ndarray, detections:pd.Dataframe=None) -> Tuple[AVPredicate, ...]:
         predicates = super().discretize(state, detections)
         return (AVPredicate(IdleTime, [IdleTime(0)]), ) + predicates
 
