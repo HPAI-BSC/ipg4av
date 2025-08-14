@@ -1,11 +1,11 @@
 from policy_graph.desire import AVDesire, DesireCategory
-from discretizer.utils import IsTrafficLightNearby, StopAreaNearby, IsTwoWheelNearby, Rotation, Velocity, IsZebraNearby, LanePosition, PedestrianNearby, BlockProgress,NextIntersection
+from discretizer.predicates import IsTrafficLightNearby, StopAreaNearby, IsTwoWheelNearby, Rotation, Velocity, IsZebraNearby, LanePosition, PedestrianNearby, BlockProgress,NextIntersection
 
 
 # ======================
 # Any Desire
 # ======================
-ANY = AVDesire("any", None, set())
+ANY = AVDesire("any", None, set(), DesireCategory.ANY)
 
 
 # ======================
@@ -15,18 +15,18 @@ ANY = AVDesire("any", None, set())
 LANE_KEEPING = AVDesire("lane_keeping", [4, 5, 6], {
     LanePosition: [LanePosition.ALIGNED], Rotation: [Rotation.FORWARD], 
     NextIntersection:[NextIntersection.NONE, NextIntersection.STRAIGHT], 
-    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM]}, 
+    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM, Velocity.MOVING]}, 
     DesireCategory.CRUISING)
 
 TURN_LEFT = AVDesire("turn_left", [2, 8, 10], {
     BlockProgress: [BlockProgress.END], NextIntersection: [NextIntersection.LEFT],
-    Rotation: [Rotation.LEFT], Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM]},
+    Rotation: [Rotation.LEFT], Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM, Velocity.MOVING]},
     DesireCategory.CRUISING
 )
 
 TURN_RIGHT = AVDesire("turn_right", [3, 7, 9], {
     BlockProgress: [BlockProgress.END], NextIntersection: [NextIntersection.RIGHT],
-    Rotation: [Rotation.RIGHT], Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM]},
+    Rotation: [Rotation.RIGHT], Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM, Velocity.MOVING]},
     DesireCategory.CRUISING
 )
 
@@ -34,13 +34,13 @@ TURN_RIGHT = AVDesire("turn_right", [3, 7, 9], {
 LANE_CHANGE_LEFT = AVDesire("lane_change_left", [2,4,5,6,8,10], {
     Rotation: [Rotation.LEFT], LanePosition: [LanePosition.CENTER], 
     BlockProgress: [BlockProgress.START, BlockProgress.MIDDLE, BlockProgress.END], 
-    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM]},
+    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM, Velocity.MOVING]},
     DesireCategory.CRUISING) 
 
 LANE_CHANGE_RIGHT = AVDesire("lane_change_right", [3,4,5,6,7,9], {
     Rotation: [Rotation.RIGHT], LanePosition: [LanePosition.CENTER], 
     BlockProgress: [BlockProgress.START, BlockProgress.MIDDLE, BlockProgress.END], 
-    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM]},
+    Velocity: [Velocity.HIGH, Velocity.LOW, Velocity.MEDIUM, Velocity.MOVING]},
     DesireCategory.CRUISING) 
 
 #TODO: handle missing lane dividers at intersections (not possible with nuScenes)
@@ -68,13 +68,13 @@ APPROACH_STOP_SIGN = AVDesire("approach_stop_sign", [1, 5, 9, 10], {
 # ======================
 
 PEDS_AT_CROSSWALK= AVDesire("peds_at_crosswalk", [1,5, 9, 10], {
-    IsZebraNearby: [IsZebraNearby.YES],Velocity:[Velocity.LOW, Velocity.MEDIUM,Velocity.HIGH], 
-    PedestrianNearby: [PedestrianNearby(1, discretization='binary')]},
+    IsZebraNearby: [IsZebraNearby.YES],Velocity:[Velocity.LOW, Velocity.MEDIUM,Velocity.HIGH, Velocity.MOVING], 
+    PedestrianNearby: [PedestrianNearby.YES]},
     DesireCategory.VULNERABLE_USERS)
 
 JAYWALKING_PEDS= AVDesire("jaywalking_peds", [1,5, 9, 10], {
-    IsZebraNearby: [IsZebraNearby.NO],Velocity:[Velocity.LOW, Velocity.MEDIUM,Velocity.HIGH], 
-    PedestrianNearby: [PedestrianNearby(1, discretization='binary')]},
+    IsZebraNearby: [IsZebraNearby.NO],Velocity:[Velocity.LOW, Velocity.MEDIUM,Velocity.HIGH, Velocity.MOVING], 
+    PedestrianNearby: [PedestrianNearby.YES]},
     DesireCategory.VULNERABLE_USERS) 
 
 #NOTE: The vehicle does not always desires to stop as some time the pedestrians may have already started crossing.
@@ -92,17 +92,17 @@ IGNORE_TWO_WHEEL = AVDesire('ignore_two_wheel', [4], {
 
 
 IGNORE_PEDS_HIGH = AVDesire("ignore_peds_high", [2,3,4,6,7,8], {
-    Velocity:[ Velocity.MEDIUM,Velocity.HIGH], PedestrianNearby: [PedestrianNearby(1, discretization='binary')]},
+    Velocity:[ Velocity.MEDIUM,Velocity.HIGH], PedestrianNearby: [PedestrianNearby.YES]},
     DesireCategory.UNSAFE) 
 IGNORE_PEDS_LOW = AVDesire("ignore_peds_low", [4,7,8], {
-    Velocity:[ Velocity.LOW], PedestrianNearby: [PedestrianNearby(1, discretization='binary')]},
+    Velocity:[ Velocity.LOW], PedestrianNearby: [PedestrianNearby.YES]},
     DesireCategory.UNSAFE) 
 #NOTE: The vehicle does not always desires to stop as some time the pedestrians may have already started crossing.
 
 
 IGNORE_STOP_SIGN = AVDesire("ignore_stop_sign", [2,3,4,6,7,8], {
     IsTrafficLightNearby: [IsTrafficLightNearby.NO], StopAreaNearby: [StopAreaNearby.STOP], 
-    Velocity: [Velocity.LOW, Velocity.HIGH, Velocity.MEDIUM]},
+    Velocity: [Velocity.LOW, Velocity.HIGH, Velocity.MEDIUM, Velocity.MOVING]},
     DesireCategory.UNSAFE)
 
 OUT_OF_DRIVING_AREA = AVDesire("out_of_driving_area", [1,2,3,4,5,6,7,8,9,10], 
@@ -111,16 +111,11 @@ OUT_OF_DRIVING_AREA = AVDesire("out_of_driving_area", [1,2,3,4,5,6,7,8,9,10],
 
 
 
-# Other possible desires: yield when turning (left and right), obstacle avoidance (left and right), emergency breaking.
-#yield_to_vehicles_rt = AVDesire("Yield to \n Vehicles", [1, 5, 9, 10], {BlockProgress: [BlockProgress.END, BlockProgress.INTERSECTION], StopAreaNearby: [StopAreaNearby.STOP, StopAreaNearby.YIELD, StopAreaNearby.TURN_STOP], Rotation: [ Rotation.RIGHT], FrontObjects: [FrontObjects(1, 'binary')], NextIntersection:[NextIntersection.RIGHT, NextIntersection.NONE]})
-#yield_to_vehicles_lf = AVDesire("Yield to \n Vehicles", [1, 5, 9, 10], {BlockProgress: [BlockProgress.END, BlockProgress.INTERSECTION], StopAreaNearby: [StopAreaNearby.STOP,StopAreaNearby.YIELD, StopAreaNearby.TURN_STOP], Rotation: [Rotation.LEFT], FrontObjects: [FrontObjects(1, 'binary')], NextIntersection:[NextIntersection.NONE, NextIntersection.LEFT]})
- 
-
 
 # For easy access: 
 
 DESIRE_MAPPING = {
-    ANY.name: ANY,
+    #ANY.name: ANY,
     LANE_KEEPING.name: LANE_KEEPING,
     TURN_LEFT.name: TURN_LEFT,
     TURN_RIGHT.name: TURN_RIGHT,
