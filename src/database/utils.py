@@ -13,34 +13,6 @@ def vector_angle(v1, v2):
         magnitude_v2 = np.linalg.norm(v2)
         return np.arccos(dot_product / (magnitude_v1 * magnitude_v2))
 
-'''
-def get_tangent_vector(lane_record, closest_pose_idx_to_lane, threshold=0.2):
-    # Compute initial tangent vector
-    if closest_pose_idx_to_lane == len(lane_record) - 1:
-        tangent_vector = lane_record[closest_pose_idx_to_lane] - lane_record[closest_pose_idx_to_lane - 1]
-    else:
-        tangent_vector = lane_record[closest_pose_idx_to_lane + 1] - lane_record[closest_pose_idx_to_lane]
-
-    tangent_vector_norm = np.linalg.norm(tangent_vector)
-
-    # Check if the norm is close to zero
-    if tangent_vector_norm <= threshold:
-        print("Initial tangent vector is zero or close to zero, recomputing...")
-        if closest_pose_idx_to_lane == 0:
-            tangent_vector = lane_record[closest_pose_idx_to_lane + 1] - lane_record[closest_pose_idx_to_lane]
-        elif closest_pose_idx_to_lane == len(lane_record) - 1:
-            tangent_vector = lane_record[closest_pose_idx_to_lane] - lane_record[closest_pose_idx_to_lane - 1]
-        else:
-            tangent_vector = lane_record[closest_pose_idx_to_lane + 1] - lane_record[closest_pose_idx_to_lane - 1]
-
-        tangent_vector_norm = np.linalg.norm(tangent_vector)
-
-        if tangent_vector_norm <= threshold:
-            print("Uncertain direction due to zero tangent vector after recomputation")
-            return 0, tangent_vector
-
-    return tangent_vector_norm, tangent_vector
-'''
 
 
 def determine_travel_alignment(direction_vector, yaw, threshold=0.05):
@@ -52,7 +24,7 @@ def determine_travel_alignment(direction_vector, yaw, threshold=0.05):
         :param eps: A small threshold to determine if the vehicle is perpendicular to the lane.
         :return: 1 if in travel direction, -1 if opposite, 0 if uncertain.
         """
-        # Normalize the direction vector
+        # Normalize  direction vector
         direction_vector_norm = np.linalg.norm(direction_vector)
         if direction_vector_norm <= threshold: #to account for norms that are very close to zero but not exactly zero.
             print("Uncertain direction due to null direction vector")
@@ -72,17 +44,19 @@ def create_rectangle(center, yaw, size, shift_distance=0):
     """
     Create a rotated rectangle as a Shapely Polygon with an option to shift its center up.
 
-    :param center (tuple): (x, y) coordinates of the rectangle's center.
-    :param yaw (float): Rotation angle in degrees.
-    :param size (tuple): (width, height) of the rectangle's size.
-    :param shift_distance (float): Amount to shift the center in the direction of rotation.
+    Args:
+        center (tuple): (x, y) coordinates of the rectangle's center.
+        yaw (float): Rotation angle in degrees.
+        size (tuple): (width, height) of the rectangle's size.
+        shift_distance (float): Amount to shift the center in the direction of rotation.
 
-    :return Polygon: A Shapely Polygon representing the rotated and shifted rectangle.
+    Return:
+        Polygon: A Shapely Polygon representing the rotated and shifted rectangle.
     """
     x, y = center
     width, height = size
 
-    # Define the initial rectangle vertices based on the center
+    # Define initial rectangle vertices based on center
     rectangle = Polygon([
         (x - width / 2, y - height / 2),
         (x + width / 2, y - height / 2),
@@ -90,17 +64,17 @@ def create_rectangle(center, yaw, size, shift_distance=0):
         (x - width / 2, y + height / 2)
     ])
 
-    # Rotate the rectangle around its center
+    # Rotate rectangle around its center
     rotated_rectangle = rotate(rectangle, yaw, origin='center', use_radians=False)
     if shift_distance == 0:
          return rotated_rectangle
     else:
-        # Calculate the shift in the local coordinate system after rotation
+        # Calculate shift in the local coordinate system after rotation
         yaw_radians = math.radians(yaw)
         shift_x = -shift_distance * math.sin(yaw_radians)
         shift_y = shift_distance * math.cos(yaw_radians)
 
-        # Translate the rotated rectangle in the direction of rotation
+        # Translate rotated rectangle in the direction of rotation
         shifted_rectangle = translate(rotated_rectangle, xoff=shift_x, yoff=shift_y)
 
         return shifted_rectangle
