@@ -188,66 +188,6 @@ def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:
     return best_thresholds
 
 
-"""
-def roc_curve(discretisers_info: Dict[str, AVPolicyGraph], desires:Set[AVDesire], output_folder:str='', step:float=0.1):
-    '''
-    Generate ROC curve for intention metrics and find the best threshold for each discretizer.
-    
-    Args:
-        discretisers_info: Dictionary mapping discretizer ID to policy graph.
-        desires: list of desires to consider.
-        output_folder: Path to save the generated ROC curve plot.
-
-    Returns:
-        A dictionary of the best thresholds for each discretizer.
-    '''
-        from experiments.desire_config import DESIRE_MAPPING
-
-    thresholds = np.arange(0, 1, step)
-    best_thresholds = {}
-    
-    plt.figure(figsize=(10, 6))
-
-
-    for discretizer_id, pg in discretisers_info.items():
-        
-        num_thresholds = len(thresholds)
-        intention_probs = np.zeros(num_thresholds)
-        expected_probs = np.zeros(num_thresholds)
-        combined_scores = np.zeros(num_thresholds)
-        
-        ii = AVIntentionIntrospector(desires, pg)
-        
-        for idx, threshold in enumerate(thresholds):
-            intention_probs[idx], expected_probs[idx] = ii.get_intention_metrics(commitment_threshold=threshold, desire=ANY)
-            #combined_scores[i] = intention_prob + expected_prob
-
-        combined_scores = intention_probs + expected_probs
-        
-        best_idx = np.argmax(combined_scores)
-        best_threshold = thresholds[best_idx]
-        best_thresholds[discretizer_id] = best_threshold
-        
-        roc_auc = auc(intention_probs, expected_probs)
-
-        print(f'Discretizer D{discretizer_id}: Best Threshold: {best_threshold:.2f},  (AUC = {roc_auc:.2f})')
-
-        plt.plot(intention_probs, expected_probs, label=f'D{discretizer_id}')           
-                
-    plt.xlabel('Intention Probability', fontsize=15)
-    plt.ylabel('Expected Intention Probability', fontsize = 15)
-    plt.title(f'Intention Metrics for $\mathit{ANY.name}$ Desire', fontsize  = 17)
-    plt.legend(fontsize=13)
-    plt.grid(True)
-    plt.tight_layout()##
-
-    if output_folder:
-        plt.savefig(f'{output_folder}/roc.png', bbox_inches = 'tight', dpi=100)
-    
-    return best_thresholds
-"""
-
-
 def annotate_bars(rects, ax, fontsize=8):
     """Annotate bars with their height."""
     for rect in rects:
