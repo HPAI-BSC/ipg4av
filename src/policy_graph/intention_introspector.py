@@ -1,7 +1,7 @@
 from typing import Set, List, Dict, Optional, Any
 import numpy as np
 import networkx.classes.coreviews
-from discretizer.utils import get_action_from_id, get_action_id
+from discretizer.predicates import get_action_from_id, get_action_id
 from policy_graph.discretizer import AVPredicate
 from policy_graph.policy_graph import AVPolicyGraph
 from policy_graph.desire import AVDesire, DesireCategory
@@ -44,7 +44,6 @@ class AVIntentionIntrospector(IntentionIntrospector):
 
 
     def check_desire(self, node: Set[AVPredicate], desire_clause: Dict[Enum, Set[Any]], actions_id:List[int]) -> bool:
-
         # Returns None if desire is not satisfied. Else, returns probability of fulfilling desire
         #   ie: executing the action when in node
         desire_clause_satisfied = True
@@ -55,14 +54,6 @@ class AVIntentionIntrospector(IntentionIntrospector):
         action_probabilities = [self.get_action_probability(node, action_id) for action_id in actions_id]
         total_probability = np.sum(action_probabilities)
         return total_probability if total_probability > 0 else None
-
-
-        #if not all(self.check_state_condition(node, atom, condition_values) 
-        #        for atom, condition_values in desire_clause.items()):
-        #    return None
-        #total_probability = sum(self.get_action_probability(node, action_id) for action_id in actions_id)
-        #return total_probability if total_probability > 0 else None
-
         
     @staticmethod
     def get_prob(unknown_dict: Optional[Dict[str, object]]):
@@ -142,7 +133,7 @@ class AVIntentionIntrospector(IntentionIntrospector):
             self.register_desire(desire)
             end_time = time.time()
 
-            print(f"Execution time: { end_time - start_time} seconds")
+            print(f"Execution time: { end_time - start_time} seconds \n")
 
 
     ##############################
@@ -154,6 +145,7 @@ class AVIntentionIntrospector(IntentionIntrospector):
         """
         Computes intention metrics for a specific desire or for any desire.
         """
+
         if desire.category is not DesireCategory.ANY:
             intention_full_nodes = [node for node in self.pg.nodes if node in self.intention and desire in self.intention[node] and self.intention[node][desire]>=commitment_threshold]
             node_probabilities = np.array([self.pg.nodes[node]['probability'] for node in intention_full_nodes])
@@ -179,7 +171,7 @@ class AVIntentionIntrospector(IntentionIntrospector):
         return intention_probability, expected_int_probability
 
 
-    def get_desire_metrics(self, desire):
+    def get_desire_metrics(self, desire:AVDesire):
         desire_prob, expected_action_prob = 0,0
         desire_nodes = [(node, self.check_desire(node, desire.clause, desire.actions)) for node in self.pg.nodes if self.check_desire(node,desire.clause, desire.actions) is not None]
         if desire_nodes:
@@ -293,8 +285,8 @@ class AVIntentionIntrospector(IntentionIntrospector):
     
     
     
-    def why_action(self, state: Set[AVPredicate], action_id:int, c_threshold:float, probability_threshold:float=0 ):
-        # Credits: pgeon library
+    def why_action(self, state: Set[AVPredicate], action_id:int, c_threshold:float, probability_threshold:float=0.0 ):
+        # Reference: https://github.com/HPAI-BSC/pgeon
         # probability_threshold: minimum probability of intention increase by which we attribute the agent is trying to
         # further an intention. eg: if it has 5% prob of increasing a desire but 95% of decreasing it
         attr_ints = {d: self.intention[state][d] for d in self.intention[state] if self.intention[state][d]>=c_threshold}
@@ -333,7 +325,7 @@ class AVIntentionIntrospector(IntentionIntrospector):
         
 
     def why_question(self, state: Set[AVPredicate], action_id:int, c_threshold:float, probability_threshold:float):
-        # Credits: pgeon library
+        # Reference: https://github.com/HPAI-BSC/pgeon
         ints = self.why_action(state, action_id, c_threshold,probability_threshold)
         action = get_action_from_id(action_id)
         if ints == {}:
