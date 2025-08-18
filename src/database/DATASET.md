@@ -17,11 +17,11 @@ Download CAN bus data and Map Expansion from the [Download page](https://github.
 
 ```bash
 data/sets/nuscenes
-    ├── can_bus/      # CAN bus data
-    ├── samples/      # Sensor file blobs (optional, used for scene rendering)
-    ├── sweeps/          # Sensor file blobs (optional, used for scene rendering)
-    ├── maps/            # City map data
-    └── v1.0-trainval/    # JSON tables with metadata & annotations
+    ├── can_bus/       # CAN bus data
+    ├── samples/       # Sensor file blobs (optional, used for scene rendering)
+    ├── sweeps/        # Sensor file blobs (optional, used for scene rendering)
+    ├── maps/          # City map data
+    └── v1.0-trainval/ # JSON tables with metadata & annotations
 
 ```    
 Adjust paths and filenames if using a different dataset split (e.g. mini). 
