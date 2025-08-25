@@ -480,7 +480,7 @@ class AVEnvironment(Environment):
     # PEDESTRIANS AND TWO-WHEELERS
     ##############################    
           
-    def vulnerable_subject_nearby(self,detections:pd.Dataframe)-> Tuple[int, int]:
+    def vulnerable_subject_nearby(self,detections:pd.DataFrame)-> Tuple[int, int]:
 
         """
         Function to check for vulnerable subjects nearby based on state detections from all cameras specified in state_detections.

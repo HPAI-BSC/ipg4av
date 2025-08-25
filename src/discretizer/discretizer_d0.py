@@ -55,7 +55,7 @@ class AVDiscretizer(Discretizer):
         )
         
 
-    def discretize_detections(self, detections:pd.Dataframe):
+    def discretize_detections(self, detections:pd.DataFrame):
         tot_count = 0
         for _, row in detections.iterrows():
 

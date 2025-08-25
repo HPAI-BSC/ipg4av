@@ -15,7 +15,7 @@ class AVDiscretizerD1(AVDiscretizer):
     ### New AVPredicates and Discretizers ###
     #########################################
 
-    def discretize_vulnerable_subjects(self, state_detections:pd.Dataframe):
+    def discretize_vulnerable_subjects(self, state_detections:pd.DataFrame):
 
         n_peds, n_bikes = self.environment.vulnerable_subject_nearby(state_detections)
         is_ped_nearby = PedestrianNearby.YES if n_peds>0 else PedestrianNearby.NO
@@ -30,7 +30,7 @@ class AVDiscretizerD1(AVDiscretizer):
     ##################################
 
     
-    def discretize(self, state: np.ndarray, detections:pd.Dataframe=None) -> Tuple[AVPredicate, ...]:
+    def discretize(self, state: np.ndarray, detections:pd.DataFrame=None) -> Tuple[AVPredicate, ...]:
 
         predicates = super().discretize(state, detections)
         pedestrian_predicate, bike_predicate = self.discretize_vulnerable_subjects(detections)

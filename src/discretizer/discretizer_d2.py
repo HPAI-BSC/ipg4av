@@ -17,7 +17,7 @@ class AVDiscretizerD2(AVDiscretizerD1):
     ##################################
 
     
-    def discretize(self, state: np.ndarray, detections:pd.Dataframe=None) -> Tuple[AVPredicate, ...]:
+    def discretize(self, state: np.ndarray, detections:pd.DataFrame=None) -> Tuple[AVPredicate, ...]:
         predicates = super().discretize(state, detections)
         return (AVPredicate(IdleTime, [IdleTime(0)]), ) + predicates
 
