@@ -173,15 +173,19 @@ def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:
 
         plt.plot(intention_probs, expected_probs, label=f'D{disc_id}')           
                 
-    plt.xlabel('Intention Probability', fontsize=15)
+    plt.xlabel('Probability of having any intention', fontsize=15)
+    #plt.xlabel('Intention Probability', fontsize=15)
     plt.ylabel('Expected Intention Probability', fontsize = 15)
-    plt.title(f'Intention Metrics for ANY Desire', fontsize  = 17)
+    plt.title("Evolution of 'Any' intention metrics", fontsize  = 17)
+    #plt.title('Intention Metrics for ANY Desire', fontsize  = 17)
     plt.legend(fontsize=13)
-    plt.grid(True)
-    #plt.tight_layout()
+    plt.grid(False)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+
 
     if output_folder:
-        plt.savefig(f'{output_folder}/roc_s{step}.png', bbox_inches = 'tight', dpi=100)
+        plt.savefig(f'{output_folder}/roc_s{step}.png', bbox_inches = 'tight', dpi=200)
     else:
         plt.show()
 
