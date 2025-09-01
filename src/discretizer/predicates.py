@@ -132,7 +132,7 @@ class IdleTime:
     def __hash__(self):
         return hash(self.count)
 
-
+    #TODO: replace with [IdleTime.LONG, IdleTime.SHORT, IdleTime.NONE]
 
 class Action(Enum):
   IDLE = auto()  
@@ -147,8 +147,6 @@ class Action(Enum):
   BRAKE_TURN_LEFT = auto() 
 
 
-#def is_close(a, b, eps=0.1):
-#     return abs(a - b) < eps
 
 def get_action_id(action):
     return action.value
