@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Paper](https://img.shields.io/badge/Paper-10.5555/3635637.3663299-f6c628.svg)](https://dl.acm.org/doi/10.5555/3635637.3663299)
+[![Paper](https://img.shields.io/badge/Paper-10.5555/3635637.3663299-f6c628.svg)](https://arxiv.org/pdf/2505.08404)
 <br/>
 [![Website](https://img.shields.io/badge/Website-HPAI-8A2BE2.svg)](https://hpai.bsc.es)
 [![GitHub](https://img.shields.io/badge/GitHub-HPAI--BSC-%23121011.svg?logo=github&logoColor=white.svg)](https://github.com/HPAI-BSC)
@@ -134,4 +134,5 @@ TODO: EXTRAAMAS block
 [1]: Gimenez-Abalos, V., Alvarez-Napagao, S., Tormos, A., Cortés, U., & Vázquez-Salceda, J. [Policy Graphs and Intention: answering ‘why’ and ‘how’ from a telic perspective](https://www.ifaamas.org/Proceedings/aamas2025/pdfs/p904.pdf). In Proceedings of the 24th International Conference on Autonomous Agents and Multiagent Systems (AAMAS '25), International Conference for Autonomous Agents and Multiagent Systems (AAMAS '25).  
 
 [2]: Tormos, A., Gimenez-Abalos, V., Vázquez-Salceda, J., & Alvarez-Napagao, S. (2024, May). [pgeon applied to Overcooked-AI to explain agents' behaviour](https://github.com/HPAI-BSC/pgeon). In Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems (pp. 2821-2823).
+
 
