@@ -32,7 +32,7 @@ def get_trajectory_metrics(ii: AVIntentionIntrospector, trajectory:List[Tuple[Tu
     
 
 
-def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[Tuple[AVPredicate], int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, output_folder:str=None):#, fill_desires = True ):
+def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[Tuple[AVPredicate], int]], scene_id:str="", desires:Set[AVDesire] = [], min_int_threshold:float=0.1, output_folder:str=None, format='pdf'):#, fill_desires = True ):
 
     """
     Plot intention progression of a scene over the specified desires.
@@ -54,22 +54,31 @@ def plot_int_progess(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[Tupl
         
         #Filter intentions in the scene to not overload the plot  
         if max(intention_vals) > min_int_threshold: #sum(intention_vals) >min_int_threshold:   
-            ax.plot(range(episode_length), intention_vals, label=d_name, color=desire_color[d_name],linestyle='dotted', linewidth=5 )
+            ax.plot(range(episode_length), intention_vals, label=d_name, color=desire_color[d_name],linestyle='dotted', linewidth=3)
          
-    ax.legend(loc='best', facecolor='white', framealpha = 1,  fontsize=24, frameon=True)
-    ax.tick_params(axis='x', labelsize=27)  
-    ax.tick_params(axis='y', labelsize=27)  
-    ax.set_xlabel('Time', fontsize=36)
-    ax.set_ylabel('Intention Value', fontsize = 36)
-   
+    #ax.legend(loc='best', facecolor='white', framealpha = 1,  fontsize=23, frameon=True)
+    
+    # Put a legend below current axis
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.10),
+              fancybox=True, framealpha=1, edgecolor='black', fontsize=23, ncol=len(desire_names),frameon=True)
+    ax.tick_params(axis='x', labelsize=25)  
+    ax.tick_params(axis='y', labelsize=25)  
+    ax.set_xlabel('Step', fontsize=25)
+    ax.set_ylabel('Intention Value', fontsize = 25)
+    ax.set_xlim(0, episode_length-1)
+
+    #black plot border
+    for spine in ax.spines.values():
+        spine.set_color('black') 
 
     ax.set_ylim(bottom=0, top=1)
     for t, d_name in desire_fulfill_track.items():
         if d_name in desire_names:
-            ax.vlines(t, -0.05, 1.05, label=d_name, colors=desire_color[d_name], linestyles='-', linewidth=4)
-    plt.title(f'Intention evolution in scene {scene_id}', fontsize=37)
+            ax.vlines(t, -0.05, 1.05, label=d_name, colors=desire_color[d_name], linestyles='-', linewidth=2)
+    #plt.title(f'Intention evolution in scene {scene_id}', fontsize=27)
+    #plt.grid(False)
     if output_folder:
-        plt.savefig(f'{output_folder}/int_progress_{scene_id}.png', bbox_inches = 'tight', dpi=200)
+        plt.savefig(f'{output_folder}/int_progress_{scene_id}.{format}', bbox_inches = 'tight', dpi=200, format=format)
         
 
 
@@ -131,7 +140,7 @@ def animate_int_progress(ii: AVIntentionIntrospector, s_a_trajectory:List[Tuple[
              
 
 
-def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:float=0.1) -> Dict[str, float]:
+def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:float=0.1, format='pdf') -> Dict[str, float]:
     """
     Generate ROC curve for intention metrics and find the best threshold for each discretizer.
     
@@ -174,10 +183,8 @@ def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:
         plt.plot(intention_probs, expected_probs, label=f'D{disc_id}')           
                 
     plt.xlabel('Probability of having any intention', fontsize=15)
-    #plt.xlabel('Intention Probability', fontsize=15)
     plt.ylabel('Expected Intention Probability', fontsize = 15)
     plt.title("Evolution of 'Any' intention metrics", fontsize  = 17)
-    #plt.title('Intention Metrics for ANY Desire', fontsize  = 17)
     plt.legend(fontsize=13)
     plt.grid(False)
     plt.xticks(fontsize=13)
@@ -185,7 +192,7 @@ def roc_curve(ipgs: List[AVIntentionIntrospector], output_folder:str=None, step:
 
 
     if output_folder:
-        plt.savefig(f'{output_folder}/roc_s{step}.png', bbox_inches = 'tight', dpi=200)
+        plt.savefig(f'{output_folder}/roc_s{step}.{format}', bbox_inches = 'tight', dpi=200)
     else:
         plt.show()
 
@@ -203,7 +210,7 @@ def annotate_bars(rects, ax, fontsize=8):
        )
 
 
-def plot_metrics(metrics_data:Dict[str, Tuple[float, float]], discretizer_id:str, output_folder:str, c:float=0.5, metric_type:str='Desire', fig_size:Tuple[int, int]=(45, 15), y_lim:float=1.15, colors:Tuple[str,str]=['#008080', '#FF7F50']):
+def plot_metrics(metrics_data:Dict[str, Tuple[float, float]], discretizer_id:str, output_folder:str, c:float=0.5, metric_type:str='Desire', fig_size:Tuple[int, int]=(45, 15), y_lim:float=1.05, colors:Tuple[str,str]=['#008080', '#FF7F50'], format='pdf'):
     """
     Displays bar plots with desire or intention metrics for each desire.
 
@@ -219,33 +226,52 @@ def plot_metrics(metrics_data:Dict[str, Tuple[float, float]], discretizer_id:str
     val1 = np.array([metrics_data[desire][0] for desire in desires])
     val2 = np.array([metrics_data[desire][1] for desire in desires])
 
-    x = np.arange(len(desires))  # Ensure x values are tightly packed
+    x = np.arange(len(desires))  
     width = 0.3  # Bar width to make pairs touch
+    fontsize = 62 #35
 
     fig, ax = plt.subplots(figsize=fig_size)
 
-    rects1 = ax.bar(x - width/2, val1, width, color=colors[0], label=f'{metric_type} Probability')
-    metric_label = 'Expected Action Probability' if metric_type == 'Desire' else 'Expected Intention Probability'
-    rects2 = ax.bar(x + width/2, val2, width, color=colors[1], label=metric_label)
+    rects1 = ax.bar(x - width/2, val1, width, color=colors[0], label=f'Probability of {metric_type} Attribution',zorder=2)
+    metric_label = 'Expected Action Probability' if metric_type == 'Desire' else 'Expected Intention'
+    rects2 = ax.bar(x + width/2, val2, width, color=colors[1], label=metric_label, zorder=2)
 
-    ax.set_ylabel('Probability', fontsize=35)
+    ax.set_ylabel('Probability', fontsize=fontsize) 
     ax.set_ylim(0, y_lim)
-    ax.set_title(f'Intention Metrics, C = {c}' if metric_type == 'Intention' else 'Desire Metrics', fontsize=50)
+    
+    #ax.set_title(f'Intention Metrics for D{discretizer_id}, C_threshold = {c}' if metric_type == 'Intention' else 'Desire Metrics', fontsize=65) #50
 
     ax.set_xticks(x)
-    ax.set_xticklabels(desires, fontsize=35)
-    plt.yticks(fontsize=35)
+    ax.set_xticklabels(desires, fontsize=55)
+    ax.tick_params( pad=40)  
+
+    plt.yticks(fontsize=fontsize)
 
     # Remove padding before first bar and after last bar
     ax.set_xlim([min(x) - width, max(x) + width])
 
-    annotate_bars(rects1, ax, fontsize=35)
-    annotate_bars(rects2, ax, fontsize=35)
+    annotate_bars(rects1, ax, fontsize=fontsize)
+    annotate_bars(rects2, ax, fontsize=fontsize)
 
-    ax.legend(ncol=2, fontsize=35, loc='upper left', facecolor='white')
+    #black plot border
+    for spine in ax.spines.values():
+        spine.set_color('black') 
 
-    save_path = f"{output_folder}/{metric_type}_{discretizer_id}.png"
-    plt.savefig(save_path, bbox_inches='tight', dpi=200)
+    ax.grid(False)
+
+    # Add horizontal lines at every y-tick
+    for y_val in ax.get_yticks():
+        ax.axhline(y=y_val, color='gray', linestyle='-', linewidth=0.3, zorder=0)
+
+
+    #ax.legend(ncol=2, fontsize=fontsize, loc='upper left', facecolor='white')
+    # Put a legend below current axis
+    ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
+              fancybox=True, framealpha=1, edgecolor='black', fontsize=fontsize, ncol=2,frameon=True)
+
+    save_path = f"{output_folder}/{metric_type}_{discretizer_id}.{format}"
+    os.makedirs(output_folder, exist_ok=True)
+    plt.savefig(save_path, bbox_inches='tight', dpi=200, format=format)
 
 
 def plot_metrics_per_desire(desires_data, desire, output_folder, metric_type='Desire', y_lim=1, colors=['#008080', '#FF7F50']):
@@ -308,5 +334,6 @@ def plot_metrics_per_desire(desires_data, desire, output_folder, metric_type='De
         fig.delaxes(axes[j])
 
     plt.tight_layout()
+    plt.grid(False)
     plt.savefig(f'{output_folder}/desire_metrics_{desire.name}.png', dpi=100)
 
