@@ -131,8 +131,6 @@ publisher="Springer Nature Switzerland",
 address="Cham",
 pages="40--57"
 }
-
-
 ```
 
 ## References
