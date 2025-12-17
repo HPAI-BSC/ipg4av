@@ -2,18 +2,16 @@
 
 ### 1. Download Dataset
 
-Download and uncompress the NuScenes dataset. For the __trainval__ version:
+Download and uncompress the NuScenes dataset. For the __trainval__ version (same for __mini__):
 
 ```bash
-
-mkdir -p /data/sets/nuscenes
 
 wget https://www.nuscenes.org/data/v1.0-trainval.tgz
 
 tar -xf v1.0-trainval.tgz -C ./data/sets/nuscenes
 ```
     
-Download CAN bus data and Map Expansion from the [Download page](https://github.com/nutonomy/nuscenes-devkit). After downloading, your folder structure should look like this:
+Download CAN bus data and map Expansions from the [Download page](https://github.com/nutonomy/nuscenes-devkit?tab=readme-ov-file#can-bus-expansion). After downloading, your folder structure should look like this:
 
 ```bash
 data/sets/nuscenes
@@ -23,8 +21,7 @@ data/sets/nuscenes
     ├── maps/          # City map data
     └── v1.0-trainval/ # JSON tables with metadata & annotations
 
-```    
-Adjust paths and filenames if using a different dataset split (e.g. mini). 
+``` 
     
     
     
@@ -33,6 +30,6 @@ To compute the necessary inputs for building the PG from vehicle observations, r
 ```bash
 bash src/database/create_database.sh
 ```
-Make sure to update the script to point to the correct NuScenes path.
+Make sure to update the script to point to the correct NuScenes path and dataset split.
 This step will generate all the processed data required to create PGs.
 
