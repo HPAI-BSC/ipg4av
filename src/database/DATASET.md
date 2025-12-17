@@ -10,14 +10,16 @@ wget https://www.nuscenes.org/data/v1.0-trainval.tgz
 
 tar -xf v1.0-trainval.tgz -C ./data/sets/nuscenes
 ```
-    
-Download CAN bus data and map Expansions from the [Download page](https://github.com/nutonomy/nuscenes-devkit?tab=readme-ov-file#can-bus-expansion). After downloading, your folder structure should look like this:
+
+NOTE: the dowloaded files are suffient to render scenes. For prepocessing, complete the steps below as well.
+   
+Download CAN bus data and map expansions from the [Download page](https://github.com/nutonomy/nuscenes-devkit?tab=readme-ov-file#can-bus-expansion). After downloading, your folder structure should look like this:
 
 ```bash
 data/sets/nuscenes
     ├── can_bus/       # CAN bus data
-    ├── samples/       # Sensor file blobs (optional, used for scene rendering)
-    ├── sweeps/        # Sensor file blobs (optional, used for scene rendering)
+    ├── samples/       # Sensor file blobs (for scene rendering)
+    ├── sweeps/        # Sensor file blobs (for scene rendering)
     ├── maps/          # City map data
     └── v1.0-trainval/ # JSON tables with metadata & annotations
 
@@ -26,7 +28,7 @@ data/sets/nuscenes
     
     
 ### 2. Preprocess Dataset
-To compute the necessary inputs for building the PG from vehicle observations, run the preprocessing script:
+To define the necessary inputs for building PGs from vehicle observations, run the preprocessing script:
 ```bash
 bash src/database/create_database.sh
 ```
