@@ -2,7 +2,7 @@
 
 ### 1. Download Dataset
 
-Download and uncompress the NuScenes dataset. For the __trainval__ version (same for __mini__):
+Download and uncompress the NuScenes dataset. For the __trainval__ version (similarly for __mini__):
 
 ```bash
 
@@ -18,8 +18,8 @@ Download CAN bus data and map expansions from the [Download page](https://github
 ```bash
 data/sets/nuscenes
     ├── can_bus/       # CAN bus data
-    ├── samples/       # Sensor file blobs (for scene rendering)
-    ├── sweeps/        # Sensor file blobs (for scene rendering)
+    ├── samples/       # Sensor file blobs
+    ├── sweeps/        # Sensor file blobs
     ├── maps/          # City map data
     └── v1.0-trainval/ # JSON tables with metadata & annotations
 
