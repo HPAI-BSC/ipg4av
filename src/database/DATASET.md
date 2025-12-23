@@ -1,38 +1,44 @@
-## Download & Preprocess NuScenes 
+## NuScenes Setup 
 
-### 1. Download Dataset
+#### 1. Download
 
-Download and uncompress the NuScenes dataset. For the __trainval__ version (similarly for __mini__):
+-  Go to the [nuScenes Download page](https://www.nuscenes.org/download) and register or log in. 
+
+- Download the latest *Map Expantion* pack.
+
+
+- Under the "Full Dataset (v1.0)" section, download the __mini__ dataset  (`v1.0-mini.tgz`) or the __trainval__ dataset split.
+
+The files above are sufficient for rendering and visualization. If you aim to perform the preprocessing, download the *CAN bus* data from the same page.
+
+#### 2. Extract
+Extract the files and organize them into the repo:
 
 ```bash
+# Extract the dataset (mini or trainval)
+tar -xf /path/to/v1.0-[split].tgz -C ./data/sets/nuscenes
 
-wget https://www.nuscenes.org/data/v1.0-trainval.tgz
+# Extract the map expansion pack
+tar -xf /path/to/nuScenes-map-expansion-[version].tgz -C ./data/sets/nuscenes/maps
 
-tar -xf v1.0-trainval.tgz -C ./data/sets/nuscenes
+# Extract CAN bus data (if downloaded)
+unzip /path/to/can_bus.zip -d ./data/sets/nuscenes
+
 ```
 
-NOTE: the dowloaded files are suffient to render scenes. For preprocessing, complete the steps below as well.
-   
-Download CAN bus data and map expansions from the [Download page](https://github.com/nutonomy/nuscenes-devkit?tab=readme-ov-file#can-bus-expansion). After downloading, your folder structure should look like this:
+After extraction, the folder `./data` structure should look like this:
 
 ```bash
 data/sets/nuscenes
-    ├── can_bus/       # CAN bus data
+    ├── can_bus/       # CAN bus data [optional]
     ├── samples/       # Sensor file blobs
     ├── sweeps/        # Sensor file blobs
     ├── maps/          # City map data
-    └── v1.0-trainval/ # JSON tables with metadata & annotations
+    └── v1.0-[split]/ # JSON tables with metadata & annotations
 
 ``` 
-    
-    
-    
-### 2. Preprocess Dataset
-Generate the dataset from which PGs will be created. Make sure to update the script to point to the correct NuScenes path and dataset split.
 
-```bash
-bash src/database/create_database.sh
-```
+
 
 
 
