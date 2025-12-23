@@ -1,38 +1,36 @@
-## Download & Preprocess NuScenes 
+## NuScenes Setup 
 
-### 1. Download Dataset
+#### 1. Download
 
-Download and uncompress the NuScenes dataset. For the __trainval__ version (similarly for __mini__):
+##### 1. Go to the [nuScenes Download page](https://www.nuscenes.org/download) and register or log in. 
+
+##### 2. Download the latest *Map Expantion* pack.
+
+
+##### 3. Under the "Full Dataset (v1.0)" section, dowload the metadata of the __trainval__ split: `v1.0-trainval_meta.tgz`
+
+#### 2. Extract
+
+
 
 ```bash
+tar -xf /path/to/v1.0-trainval.tgz -C ./data/sets/nuscenes
 
-wget https://www.nuscenes.org/data/v1.0-trainval.tgz
+tar -xf /path/to/nuScenes-map-expansion-[version].tgz -C ./data/sets/nuscenes/maps
 
-tar -xf v1.0-trainval.tgz -C ./data/sets/nuscenes
 ```
 
-NOTE: the dowloaded files are suffient to render scenes. For preprocessing, complete the steps below as well.
-   
-Download CAN bus data and map expansions from the [Download page](https://github.com/nutonomy/nuscenes-devkit?tab=readme-ov-file#can-bus-expansion). After downloading, your folder structure should look like this:
+Your folder structure should look like this:
 
 ```bash
 data/sets/nuscenes
-    ├── can_bus/       # CAN bus data
     ├── samples/       # Sensor file blobs
-    ├── sweeps/        # Sensor file blobs
     ├── maps/          # City map data
     └── v1.0-trainval/ # JSON tables with metadata & annotations
 
 ``` 
-    
-    
-    
-### 2. Preprocess Dataset
-Generate the dataset from which PGs will be created. Make sure to update the script to point to the correct NuScenes path and dataset split.
 
-```bash
-bash src/database/create_database.sh
-```
+
 
 
 
